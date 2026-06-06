@@ -441,6 +441,12 @@ body{background:var(--black);color:var(--white);font-family:'DM Sans',sans-serif
 #deleteModal{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.75);display:none;align-items:center;justify-content:center;padding:24px;}
 #deleteModal.show{display:flex;}
 .dm-box{background:var(--dark3);border:1px solid rgba(231,76,60,.3);border-radius:16px;padding:28px 26px;width:100%;max-width:380px;}
+/* COLLECT PAYMENT MODAL */
+#collectModal{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.75);display:none;align-items:center;justify-content:center;padding:24px;}
+#collectModal.show{display:flex;}
+.cm-box{background:var(--dark3);border:1px solid rgba(46,204,113,.3);border-radius:16px;padding:28px 26px;width:100%;max-width:380px;}
+.cm-ttl{font-family:'Playfair Display',serif;font-size:17px;font-weight:700;color:var(--green);text-align:center;margin-bottom:4px;}
+.cm-sub{font-size:11px;color:var(--muted);text-align:center;margin-bottom:16px;line-height:1.5;}
 .dm-icon{font-size:36px;text-align:center;margin-bottom:10px;}
 .dm-ttl{font-family:'Playfair Display',serif;font-size:17px;font-weight:700;color:var(--red);text-align:center;margin-bottom:4px;}
 .dm-sub{font-size:11px;color:var(--muted);text-align:center;margin-bottom:18px;line-height:1.5;}
@@ -461,53 +467,54 @@ body{background:var(--black);color:var(--white);font-family:'DM Sans',sans-serif
   @page{size:A5;margin:6mm;}
   body>*:not(.print-area){display:none!important;}
   .print-area{display:block!important;}
-  .sr{font-family:Arial,sans-serif;max-width:100%;color:#000;font-size:8.5px;}
-  .sr-hdr{display:flex;align-items:stretch;border-bottom:2px solid #C9A84C;margin-bottom:7px;padding-bottom:7px;gap:9px;}
-  .sr-logo{width:40px;height:40px;border-radius:50%;background:#0A0A0A;border:2px solid #C9A84C;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-  .sr-om{font-size:18px;color:#C9A84C;font-family:serif;font-weight:900;line-height:1;display:block;}
-  .sr-info{flex:1;}
-  .sr-badge{font-size:6px;font-weight:900;letter-spacing:.3em;text-transform:uppercase;color:#C9A84C;background:#fff8e1;border:1px solid #C9A84C;display:inline-block;padding:1px 7px;border-radius:100px;margin-bottom:3px;}
-  .sr-biz{font-size:12px;font-weight:900;color:#000;line-height:1.1;margin-bottom:2px;}
-  .sr-tag{font-size:6.5px;color:#888;letter-spacing:.1em;text-transform:uppercase;}
-  .sr-contact{font-size:7px;color:#555;margin-top:2px;}
-  .sr-meta{text-align:right;display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:2px;}
-  .sr-title{display:inline-block;background:#C9A84C;color:#000;font-size:7.5px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;padding:2px 9px;border-radius:3px;margin-bottom:2px;}
-  .sr-jobid{font-family:monospace;font-size:13px;font-weight:900;color:#C9A84C;}
-  .sr-date{font-size:7px;color:#555;}
-  .sr-war{display:inline-block;background:#e8f5e9;border:1px solid #4CAF50;color:#2E7D32;padding:1px 6px;border-radius:100px;font-size:6.5px;font-weight:700;}
-  .sr-body{display:grid;grid-template-columns:1fr 1fr;gap:0 14px;}
-  .sr-sec{margin-bottom:6px;}
-  .sr-sec-t{font-size:6.5px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:#C9A84C;border-bottom:1px solid #e8d9b0;padding-bottom:2px;margin-bottom:4px;}
-  .sr-f{display:flex;flex-direction:column;gap:0;margin-bottom:3px;}
-  .sr-fl{font-size:6px;color:#999;text-transform:uppercase;letter-spacing:.06em;}
-  .sr-fv{font-size:8px;color:#111;font-weight:600;border-bottom:1px solid #eee;padding-bottom:1px;min-height:11px;}
-  .sr-full{grid-column:1/-1;}
-  .sr-issue{background:#fafafa;border:1px solid #eee;border-left:3px solid #C9A84C;border-radius:3px;padding:4px 7px;font-size:8px;line-height:1.4;color:#222;min-height:26px;margin-bottom:6px;}
-  .sr-notes{background:#f0f7ff;border:1px solid #b3d4f5;border-left:3px solid #3498DB;border-radius:3px;padding:4px 7px;font-size:8px;line-height:1.4;color:#222;min-height:22px;margin-bottom:6px;white-space:pre-wrap;}
-  .sr-pt{width:100%;border-collapse:collapse;margin-bottom:6px;font-size:7.5px;}
-  .sr-pt thead tr{background:#fff8e1;}
-  .sr-pt th{padding:3px 5px;border:1px solid #e8d9b0;text-align:left;font-size:6.5px;text-transform:uppercase;letter-spacing:.06em;color:#C9A84C;}
-  .sr-pt td{padding:3px 5px;border:1px solid #eee;}
-  .sr-chklist{display:grid;grid-template-columns:repeat(5,1fr);gap:2px;margin-bottom:6px;}
-  .sr-chi{display:flex;align-items:center;gap:3px;font-size:6.5px;color:#333;}
-  .sr-chbox{width:8px;height:8px;border:1px solid #999;border-radius:2px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;font-size:6px;}
-  .sr-sigs{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:5px;}
-  .sr-sig{display:flex;flex-direction:column;gap:2px;}
-  .sr-sig-lbl{font-size:6.5px;color:#888;text-transform:uppercase;letter-spacing:.08em;}
-  .sr-sig-val{border:1px solid #ddd;border-radius:3px;padding:5px 8px;min-height:28px;background:#fafafa;}
-  .sr-sig-tech{border-color:#C9A84C!important;background:#fffdf5!important;}
-  .sr-sig-name{font-size:8px;font-weight:700;color:#333;}
-  .sr-sig-tech .sr-sig-name{color:#8B6914;}
-  .sr-sig-ts{font-size:6.5px;color:#888;margin-top:1px;}
-  .sr-sname{border-top:1px solid #ccc;padding-top:2px;font-size:6.5px;color:#666;margin-top:2px;}
-  .sr-tnc{background:#fafafa;border:1px solid #e0d8c8;border-radius:3px;padding:4px 7px;margin-bottom:5px;}
-  .sr-tnc-t{font-size:6.5px;font-weight:700;color:#C9A84C;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px;}
-  .sr-tnc-cols{display:grid;grid-template-columns:1fr 1fr;gap:0 10px;}
-  .sr-tnc-item{font-size:6.5px;color:#555;line-height:1.35;margin-bottom:2px;}
-  .sr-tnc-item strong{color:#333;}
-  .sr-tnc-ok{font-size:6.5px;font-weight:700;color:#2E7D32;border-top:1px solid #e0d8c8;padding-top:2px;margin-top:2px;}
-  .sr-foot{text-align:center;border-top:1px solid #eee;padding-top:4px;font-size:6px;color:#aaa;line-height:1.5;}
 }
+/* SR STYLES — always active so html2pdf can render them */
+.sr{font-family:Arial,sans-serif;max-width:100%;color:#000;font-size:8.5px;background:#fff;}
+.sr-hdr{display:flex;align-items:stretch;border-bottom:2px solid #C9A84C;margin-bottom:7px;padding-bottom:7px;gap:9px;}
+.sr-logo{width:40px;height:40px;border-radius:50%;background:#0A0A0A;border:2px solid #C9A84C;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.sr-om{font-size:18px;color:#C9A84C;font-family:serif;font-weight:900;line-height:1;display:block;}
+.sr-info{flex:1;}
+.sr-badge{font-size:6px;font-weight:900;letter-spacing:.3em;text-transform:uppercase;color:#C9A84C;background:#fff8e1;border:1px solid #C9A84C;display:inline-block;padding:1px 7px;border-radius:100px;margin-bottom:3px;}
+.sr-biz{font-size:12px;font-weight:900;color:#000;line-height:1.1;margin-bottom:2px;}
+.sr-tag{font-size:6.5px;color:#888;letter-spacing:.1em;text-transform:uppercase;}
+.sr-contact{font-size:7px;color:#555;margin-top:2px;}
+.sr-meta{text-align:right;display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:2px;}
+.sr-title{display:inline-block;background:#C9A84C;color:#000;font-size:7.5px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;padding:2px 9px;border-radius:3px;margin-bottom:2px;}
+.sr-jobid{font-family:monospace;font-size:13px;font-weight:900;color:#C9A84C;}
+.sr-date{font-size:7px;color:#555;}
+.sr-war{display:inline-block;background:#e8f5e9;border:1px solid #4CAF50;color:#2E7D32;padding:1px 6px;border-radius:100px;font-size:6.5px;font-weight:700;}
+.sr-body{display:grid;grid-template-columns:1fr 1fr;gap:0 14px;}
+.sr-sec{margin-bottom:6px;}
+.sr-sec-t{font-size:6.5px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:#C9A84C;border-bottom:1px solid #e8d9b0;padding-bottom:2px;margin-bottom:4px;}
+.sr-f{display:flex;flex-direction:column;gap:0;margin-bottom:3px;}
+.sr-fl{font-size:6px;color:#999;text-transform:uppercase;letter-spacing:.06em;}
+.sr-fv{font-size:8px;color:#111;font-weight:600;border-bottom:1px solid #eee;padding-bottom:1px;min-height:11px;}
+.sr-full{grid-column:1/-1;}
+.sr-issue{background:#fafafa;border:1px solid #eee;border-left:3px solid #C9A84C;border-radius:3px;padding:4px 7px;font-size:8px;line-height:1.4;color:#222;min-height:26px;margin-bottom:6px;}
+.sr-notes{background:#f0f7ff;border:1px solid #b3d4f5;border-left:3px solid #3498DB;border-radius:3px;padding:4px 7px;font-size:8px;line-height:1.4;color:#222;min-height:22px;margin-bottom:6px;white-space:pre-wrap;}
+.sr-pt{width:100%;border-collapse:collapse;margin-bottom:6px;font-size:7.5px;}
+.sr-pt thead tr{background:#fff8e1;}
+.sr-pt th{padding:3px 5px;border:1px solid #e8d9b0;text-align:left;font-size:6.5px;text-transform:uppercase;letter-spacing:.06em;color:#C9A84C;}
+.sr-pt td{padding:3px 5px;border:1px solid #eee;}
+.sr-chklist{display:grid;grid-template-columns:repeat(5,1fr);gap:2px;margin-bottom:6px;}
+.sr-chi{display:flex;align-items:center;gap:3px;font-size:6.5px;color:#333;}
+.sr-chbox{width:8px;height:8px;border:1px solid #999;border-radius:2px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;font-size:6px;}
+.sr-sigs{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:5px;}
+.sr-sig{display:flex;flex-direction:column;gap:2px;}
+.sr-sig-lbl{font-size:6.5px;color:#888;text-transform:uppercase;letter-spacing:.08em;}
+.sr-sig-val{border:1px solid #ddd;border-radius:3px;padding:5px 8px;min-height:28px;background:#fafafa;}
+.sr-sig-tech{border-color:#C9A84C!important;background:#fffdf5!important;}
+.sr-sig-name{font-size:8px;font-weight:700;color:#333;}
+.sr-sig-tech .sr-sig-name{color:#8B6914;}
+.sr-sig-ts{font-size:6.5px;color:#888;margin-top:1px;}
+.sr-sname{border-top:1px solid #ccc;padding-top:2px;font-size:6.5px;color:#666;margin-top:2px;}
+.sr-tnc{background:#fafafa;border:1px solid #e0d8c8;border-radius:3px;padding:4px 7px;margin-bottom:5px;}
+.sr-tnc-t{font-size:6.5px;font-weight:700;color:#C9A84C;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px;}
+.sr-tnc-cols{display:grid;grid-template-columns:1fr 1fr;gap:0 10px;}
+.sr-tnc-item{font-size:6.5px;color:#555;line-height:1.35;margin-bottom:2px;}
+.sr-tnc-item strong{color:#333;}
+.sr-tnc-ok{font-size:6.5px;font-weight:700;color:#2E7D32;border-top:1px solid #e0d8c8;padding-top:2px;margin-top:2px;}
+.sr-foot{text-align:center;border-top:1px solid #eee;padding-top:4px;font-size:6px;color:#aaa;line-height:1.5;}
 </style>
 </head>
 <body>
@@ -712,7 +719,7 @@ body{background:var(--black);color:var(--white);font-family:'DM Sans',sans-serif
       <div class="fbar" style="margin-bottom:16px;">
         <input type="date" class="sinp" id="ds_date" style="max-width:180px;" onchange="renderDailySummary()">
         <button class="btn btn-outline btn-sm" onclick="document.getElementById('ds_date').value=new Date().toISOString().split('T')[0];renderDailySummary()">Today</button>
-        <button class="btn btn-gold btn-sm" onclick="printDailySummary()">📥 Download PDF</button>
+        <button class="btn btn-gold btn-sm" onclick="printDailySummary()">🖨️ Print / Save PDF</button>
       </div>
       <div id="ds_content"></div>
     </div>
@@ -917,7 +924,7 @@ body{background:var(--black);color:var(--white);font-family:'DM Sans',sans-serif
   <div class="suc-id" id="suc_id">OM-2026-XXXX</div>
   <div class="suc-msg" id="suc_msg"></div>
   <div class="suc-btns">
-    <button class="btn btn-gold" onclick="doPrint()">📥 Download PDF</button>
+    <button class="btn btn-gold" onclick="doPrint()">🖨️ Print / Save PDF</button>
     <button class="btn" style="background:#25D366;color:#fff;border:none;" onclick="doWA()">💬 WhatsApp Customer</button>
     <button class="btn btn-outline" onclick="nav('techpanel');document.getElementById('successOverlay').classList.remove('show')">🔧 Open Tech Panel</button>
     <button class="btn btn-outline" onclick="newJob()">+ New Job</button>
@@ -946,6 +953,30 @@ body{background:var(--black);color:var(--white);font-family:'DM Sans',sans-serif
         <button class="btn btn-outline" onclick="closeEdit()">Cancel</button>
         <button class="btn btn-gold" onclick="saveEdit()">✅ Save Changes</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- COLLECT PAYMENT MODAL -->
+<div id="collectModal">
+  <div class="cm-box">
+    <div style="font-size:36px;text-align:center;margin-bottom:8px;">💵</div>
+    <div class="cm-ttl">Collect Balance Payment</div>
+    <div class="cm-sub" id="cm_sub">Collecting balance for Job —</div>
+    <label class="lb-label">Amount Received (₹)</label>
+    <input class="lb-input" type="number" id="cm_amount" placeholder="Enter amount collected…" style="margin-bottom:10px;" onkeydown="if(event.key==='Enter')confirmCollect()">
+    <label class="lb-label">Payment Mode</label>
+    <select class="lb-input" id="cm_mode" style="margin-bottom:10px;appearance:none;cursor:pointer;">
+      <option value="">Select mode…</option>
+      <option>Cash</option><option>UPI</option><option>Card</option><option>Bank Transfer</option>
+    </select>
+    <div class="lb-err" id="cm_err" style="margin-bottom:10px;"></div>
+    <div style="background:rgba(201,168,76,.07);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:11px;color:var(--mid);">
+      💡 This will add to the existing advance and update the balance automatically.
+    </div>
+    <div style="display:flex;gap:9px;">
+      <button class="btn btn-outline" style="flex:1;" onclick="closeCollectModal()">Cancel</button>
+      <button class="btn btn-green" style="flex:1;" onclick="confirmCollect()">✅ Confirm Payment</button>
     </div>
   </div>
 </div>
@@ -1328,7 +1359,7 @@ function newJob(){
   document.getElementById('j_techTs').textContent='Job timestamp will appear on submission';
   nav('newjob');window.scrollTo({top:0,behavior:'smooth'});
 }
-function doPrint(){buildSR(_job);setTimeout(printSR,300);}
+function doPrint(){buildSR(_job);setTimeout(printSR,800);}
 function doWA(){
   var j=_job,msg='🛠️ *JOB CARD — OM SAI Apple Service Hub*\n\n📋 *Job ID:* '+j.jobId+'\n📅 *Date:* '+j.date+' at '+j.time+'\n\n👤 *Customer:* '+j.firstName+' '+j.lastName+'\n📞 *Phone:* +91 '+j.phone+'\n📧 *Email:* '+j.email+'\n\n📱 *Device:* '+j.devType+' '+j.devModel+(j.serial?'\n🔢 *Serial:* '+j.serial:'')+'\n🔍 *Condition:* '+j.condition+'\n\n⚠️ *Issue:* '+j.issue+'\n\n✍️ *Confirmed by:* '+j.custConfirmName+'\n👨‍🔧 *Technician:* '+j.tech+(j.cost?'\n💰 *Est. Cost:* ₹'+j.cost:'')+(j.advance&&j.advance!=='0'?'\n💵 *Advance:* ₹'+j.advance:'')+'\n\n📍 OM SAI Apple Service Hub | +91-7208325405\n_Trust · Quality · Care_';
   window.open('https://wa.me/91'+j.phone.slice(-10)+'?text='+encodeURIComponent(msg),'_blank');
@@ -1418,12 +1449,18 @@ function buildSR(j){
 function printSR(){
   var el=document.getElementById('printArea');
   if(!el||!el.innerHTML){toast('Nothing to download',true);return;}
-  var jobId=(_job&&_job.jobId)||'report';
-  var isFinal=_job&&(_job.status==='Ready'||_job.status==='Delivered');
-  var fname='OM-SAI-'+(isFinal?'Final-Report':'Service-Report')+'-'+jobId+'.pdf';
-  var opt={margin:6,filename:fname,image:{type:'jpeg',quality:0.98},html2canvas:{scale:2,useCORS:true,letterRendering:true},jsPDF:{unit:'mm',format:'a5',orientation:'portrait'}};
-  toast('Preparing PDF…',false);
-  html2pdf().set(opt).from(el).save().then(function(){toast('PDF downloaded!',false);});
+  // Collect all styles from the current page
+  var styles='';
+  document.querySelectorAll('style').forEach(function(s){styles+=s.innerHTML;});
+  document.querySelectorAll('link[rel="stylesheet"]').forEach(function(l){styles+='@import url("'+l.href+'");';});
+  var win=window.open('','_blank','width=800,height=900');
+  if(!win){toast('Please allow pop-ups and try again',true);return;}
+  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><style>'+styles+'body{background:#fff;padding:10mm;margin:0;}@page{size:A5;margin:6mm;}@media print{body{padding:0;}}</style></head><body>'+el.innerHTML+'</body></html>');
+  win.document.close();
+  setTimeout(function(){
+    win.focus();
+    win.print();
+  },800);
 }
 function sf(l,v){return'<div class="sr-f"><div class="sr-fl">'+l+'</div><div class="sr-fv">'+v+'</div></div>';}
 
@@ -1475,7 +1512,15 @@ function renderTPDetail(j){
   h+='<div class="field"><label>Advance (₹)</label><input class="pts-inp" type="number" value="'+esc(j.advance||'0')+'" placeholder="0" style="border-radius:8px;" onchange="updateField(\''+esc(j.jobId)+'\',\'advance\',this.value);refreshBal(\''+esc(j.jobId)+'\')"></div>';
   h+='<div class="field"><label>Balance Due</label><div id="bal_disp" style="background:var(--dark5);border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-family:\'JetBrains Mono\',monospace;font-size:12px;color:'+(bal>0?'var(--orange)':'var(--green)')+';">'+(bal>0?'₹'+bal.toFixed(0):'✓ PAID')+'</div></div>';
   h+='<div class="field"><label>Payment Mode</label><select class="pts-inp" style="border-radius:8px;" onchange="updateField(\''+esc(j.jobId)+'\',\'payMode\',this.value)"><option value="">—</option><option'+(j.payMode==='Cash'?' selected':'')+'>Cash</option><option'+(j.payMode==='UPI'?' selected':'')+'>UPI</option><option'+(j.payMode==='Card'?' selected':'')+'>Card</option><option'+(j.payMode==='Bank Transfer'?' selected':'')+'>Bank Transfer</option></select></div>';
-  h+='</div></div></div>';
+  h+='</div>';
+  if(bal>0){
+    h+='<div style="margin-bottom:10px;">';
+    h+='<button class="btn btn-green" style="width:100%;font-size:13px;padding:11px;" onclick="openCollectPayment(\''+esc(j.jobId)+'\','+bal+')">💵 Collect Balance Payment — ₹'+bal.toFixed(0)+'</button>';
+    h+='</div>';
+  } else if(cost>0) {
+    h+='<div style="background:rgba(46,204,113,.07);border:1px solid rgba(46,204,113,.2);border-radius:8px;padding:10px 14px;margin-bottom:10px;font-size:12px;color:var(--green);font-weight:600;">✅ Fully Paid — No balance outstanding</div>';
+  }
+  h+='</div></div>';
   // SAVE CHANGES BUTTON
   h+='<div style="margin:6px 0 20px;padding:14px 16px;background:rgba(201,168,76,.05);border:1px solid rgba(201,168,76,.2);border-radius:10px;display:flex;align-items:center;justify-content:space-between;gap:12px;">';
   h+='<div style="font-size:12px;color:var(--mid);">💾 Technician notes, parts and financials auto-save on change. Click below to confirm all changes.</div>';
@@ -1519,20 +1564,28 @@ function setStatus(jobId,idx){
   logRepair(jobs,i,'status','Status changed: '+prev+' → '+STATUSES[idx]);
   saveJobs(jobs);refreshAll();renderTPList();selectJob(jobId);
   toast('Status → '+STATUSES[idx],false);
-  // Auto-WhatsApp when moved to Ready for Pickup
-  if(idx===3){
-    setTimeout(function(){
-      var j=jobs[i];
-      var c=parseFloat(j.finalCost)||0,a=parseFloat(j.advance)||0,b=Math.max(0,c-a);
-      var msg='✅ *Your device is Ready for Pickup!*\n\n'+'Dear '+j.firstName+',\n\nGreat news! Your repair is complete and your device is ready for collection.\n\n'+'📋 *Job ID:* '+j.jobId+'\n'+'📱 *Device:* '+j.devType+' '+j.devModel+'\n'+(j.techName||j.tech?'👨‍🔧 *Technician:* '+(j.techName||j.tech)+'\n':'')+(c>0?'💰 *Total Amount:* ₹'+c.toFixed(0)+'\n':'')+(b>0?'⚠️ *Balance Due:* ₹'+b.toFixed(0)+' (please bring exact amount)\n':'✅ *Payment:* Fully Paid\n')+(j.warranty&&j.warranty!=='No Warranty'?'🛡️ *Warranty:* '+j.warranty+'\n':'')+'⏰ *Store Hours:* Mon–Sun, 9 AM – 11 PM\n\nPlease visit us with this message and a valid ID to collect your device.\n\n📍 OM SAI Apple Service Hub\nDattapada Rd, Borivali (E), Mumbai\n📞 +91-7208325405\n\n_Thank you for choosing us! 🙏_';
-      var d=(j.phone||'').replace(/\D/g,'');
-      if(d.length>=10){
-        if(confirm('Device is Ready! Send WhatsApp pickup notification to '+j.firstName+' (+91 '+d.slice(-10)+')?')){
-          window.open('https://wa.me/91'+d.slice(-10)+'?text='+encodeURIComponent(msg),'_blank');
-        }
+  // Auto-WhatsApp notifications on key status changes
+  setTimeout(function(){
+    var j=loadJobs().find(function(x){return x.jobId===jobId;});
+    if(!j)return;
+    var d=(j.phone||'').replace(/\D/g,'');
+    if(d.length<10)return;
+    var c=parseFloat(j.finalCost)||0,a=parseFloat(j.advance)||0,b=Math.max(0,c-a);
+    var msg='';
+    // Status: Diagnosed — send quote/update
+    if(idx===1){
+      msg='🔬 *Diagnosis Complete — OM SAI Apple Service Hub*\n\nDear '+j.firstName+',\n\nWe have diagnosed your device and found the issue.\n\n📋 *Job ID:* '+j.jobId+'\n📱 *Device:* '+j.devType+' '+j.devModel+(j.diagnosis?'\n\n📝 *Findings:* '+j.diagnosis:'')+(c>0?'\n\n💰 *Estimated Cost:* ₹'+c.toFixed(0):'')+'\n\nPlease reply to approve the repair so we can proceed.\n\n📍 OM SAI Apple Service Hub\n📞 +91-7208325405\n_Trust · Quality · Care_ 🙏';
+    }
+    // Status: Ready for Pickup
+    else if(idx===3){
+      msg='✅ *Your device is Ready for Pickup!*\n\nDear '+j.firstName+',\n\nGreat news! Your repair is complete and your device is ready for collection.\n\n📋 *Job ID:* '+j.jobId+'\n📱 *Device:* '+j.devType+' '+j.devModel+'\n'+(c>0?'💰 *Total Amount:* ₹'+c.toFixed(0)+'\n':'')+(b>0?'⚠️ *Balance Due:* ₹'+b.toFixed(0)+' (please bring exact amount)\n':'✅ *Payment:* Fully Paid\n')+(j.warranty&&j.warranty!=='No Warranty'?'🛡️ *Warranty:* '+j.warranty+'\n':'')+'⏰ *Store Hours:* Mon–Sun, 9 AM – 11 PM\n\nPlease visit us with this message and a valid ID to collect your device.\n\n📍 OM SAI Apple Service Hub\nDattapada Rd, Borivali (E), Mumbai\n📞 +91-7208325405\n\n_Thank you for choosing us! 🙏_';
+    }
+    if(msg){
+      if(confirm('Send WhatsApp notification to '+j.firstName+' (+91 '+d.slice(-10)+') about status: '+STATUSES[idx]+'?')){
+        window.open('https://wa.me/91'+d.slice(-10)+'?text='+encodeURIComponent(msg),'_blank');
       }
-    },400);
-  }
+    }
+  },400);
 }
 function saveAllChanges(jobId){
   var jobs=loadJobs(),j=jobs.find(function(x){return x.jobId===jobId;});
@@ -1631,6 +1684,60 @@ function closeDeleteModal(){
   document.getElementById('deleteModal').classList.remove('show');
   _deleteJobId=null;
 }
+
+/* ── COLLECT PAYMENT ── */
+var _collectJobId=null,_collectBal=0;
+function openCollectPayment(jobId,bal){
+  _collectJobId=jobId;_collectBal=bal;
+  document.getElementById('cm_sub').textContent='Collecting balance for '+jobId+' — Outstanding: ₹'+bal.toFixed(0);
+  document.getElementById('cm_amount').value=bal.toFixed(0);
+  document.getElementById('cm_mode').value='';
+  document.getElementById('cm_err').textContent='';
+  document.getElementById('cm_err').classList.remove('show');
+  document.getElementById('collectModal').classList.add('show');
+  setTimeout(function(){document.getElementById('cm_amount').focus();},150);
+}
+function closeCollectModal(){
+  document.getElementById('collectModal').classList.remove('show');
+  _collectJobId=null;_collectBal=0;
+}
+function confirmCollect(){
+  var amt=parseFloat(document.getElementById('cm_amount').value)||0;
+  var mode=document.getElementById('cm_mode').value;
+  var err=document.getElementById('cm_err');
+  err.classList.remove('show');
+  if(!amt||amt<=0){err.textContent='Please enter a valid amount.';err.classList.add('show');return;}
+  if(!mode){err.textContent='Please select a payment mode.';err.classList.add('show');return;}
+  var jobs=loadJobs(),i=jobs.findIndex(function(j){return j.jobId===_collectJobId;});
+  if(i<0){closeCollectModal();return;}
+  var oldAdv=parseFloat(jobs[i].advance)||0;
+  var newAdv=oldAdv+amt;
+  jobs[i].advance=newAdv.toFixed(0);
+  jobs[i].payMode=mode;
+  var cost=parseFloat(jobs[i].finalCost)||0;
+  var newBal=Math.max(0,cost-newAdv);
+  logRepair(jobs,i,'financial','Payment collected: ₹'+amt.toFixed(0)+' via '+mode+'. New advance: ₹'+newAdv.toFixed(0)+'. Balance: ₹'+newBal.toFixed(0));
+  saveJobs(jobs);
+  closeCollectModal();
+  refreshAll();
+  renderTPList();
+  selectJob(_collectJobId);
+  toast('✅ Payment of ₹'+amt.toFixed(0)+' collected via '+mode+(newBal<=0?' — Fully Paid!':''),false);
+  // Auto WhatsApp receipt if fully paid
+  if(newBal<=0){
+    setTimeout(function(){
+      var j=jobs[i];
+      var d=(j.phone||'').replace(/\D/g,'');
+      if(d.length>=10){
+        var msg='✅ *Payment Received — OM SAI Apple Service Hub*\n\nDear '+j.firstName+',\n\nThank you! We have received your payment.\n\n📋 *Job ID:* '+j.jobId+'\n📱 *Device:* '+j.devType+' '+j.devModel+'\n💰 *Amount Paid:* ₹'+amt.toFixed(0)+' ('+mode+')\n✅ *Status:* Fully Paid\n'+(j.warranty&&j.warranty!=='No Warranty'?'🛡️ *Warranty:* '+j.warranty+'\n':'')+'\nThank you for choosing OM SAI Apple Service Hub! 🙏\n📞 +91-7208325405';
+        if(confirm('Payment recorded! Send WhatsApp receipt to '+j.firstName+'?')){
+          window.open('https://wa.me/91'+d.slice(-10)+'?text='+encodeURIComponent(msg),'_blank');
+        }
+      }
+    },400);
+  }
+}
+document.getElementById('collectModal').addEventListener('click',function(e){if(e.target===this)closeCollectModal();});
 function confirmDelete(){
   var u=(document.getElementById('dm_user').value||'').trim().toLowerCase();
   var p=(document.getElementById('dm_pass').value||'').trim();
@@ -1663,7 +1770,7 @@ function confirmDelete(){
   toast('Job '+jobId+' deleted by '+match.u,true);
 }
 document.getElementById('deleteModal').addEventListener('click',function(e){if(e.target===this)closeDeleteModal();});
-function printSRFor(jobId){var j=loadJobs().find(function(x){return x.jobId===jobId;});if(!j){toast('Job not found',true);return;}_job=j;buildSR(j);setTimeout(printSR,350);}
+function printSRFor(jobId){var j=loadJobs().find(function(x){return x.jobId===jobId;});if(!j){toast('Job not found',true);return;}_job=j;buildSR(j);setTimeout(printSR,800);}
 function tpWA(jobId){var j=loadJobs().find(function(x){return x.jobId===jobId;});if(!j)return;var c=parseFloat(j.finalCost)||0,a=parseFloat(j.advance)||0,b=Math.max(0,c-a);var msg='🛠️ *OM SAI Apple Service Hub Update*\n\nDear '+j.firstName+',\n\nYour repair status:\n*Job ID:* '+j.jobId+'\n*Device:* '+j.devType+' '+j.devModel+'\n*Status:* '+j.status+(c>0?'\n*Total:* ₹'+c.toFixed(0):'')+(b>0?'\n*Balance Due:* ₹'+b.toFixed(0):'\n*Payment:* Fully Paid')+'\n\nPlease visit us to collect your device.\n📍 Dattapada Rd, Borivali (E)\n📞 +91-7208325405\n_Trust · Quality · Care_';var d=(j.phone||'').replace(/\D/g,'');if(d.length<10){toast('No valid phone',true);return;}window.open('https://wa.me/91'+d.slice(-10)+'?text='+encodeURIComponent(msg),'_blank');}
 
 /* ── EDIT JOB ── */
@@ -1726,7 +1833,14 @@ function invSearch(){
   var q=(document.getElementById('inv_input').value||'').trim().toLowerCase();
   var dd=document.getElementById('inv_dd');
   if(!q){dd.classList.remove('show');dd.innerHTML='';return;}
-  var jobs=loadJobs().filter(function(j){return(j.jobId||'').toLowerCase().includes(q)||(j.firstName||'').toLowerCase().includes(q)||(j.lastName||'').toLowerCase().includes(q)||(j.phone||'').includes(q);});
+  var jobs=loadJobs().filter(function(j){
+    return(j.jobId||'').toLowerCase().includes(q)||
+           (j.firstName||'').toLowerCase().includes(q)||
+           (j.lastName||'').toLowerCase().includes(q)||
+           ((j.firstName||'')+' '+(j.lastName||'')).toLowerCase().includes(q)||
+           (j.phone||'').includes(q)||
+           (j.devModel||'').toLowerCase().includes(q);
+  });
   if(!jobs.length){dd.innerHTML='<div style="padding:9px 13px;font-size:12px;color:var(--muted);">No jobs found</div>';dd.classList.add('show');return;}
   dd.innerHTML=jobs.slice(0,8).map(function(j){return'<div class="inv-dd-item" onclick="pickInvJob(\''+esc(j.jobId)+'\')"><div class="inv-dd-id">'+esc(j.jobId)+'</div><div class="inv-dd-name">'+esc((j.firstName||'')+' '+(j.lastName||''))+'</div><div class="inv-dd-dev">'+esc((j.devType||'')+' '+(j.devModel||''))+(j.status?' · <span class="badge '+stcls(j.status)+'" style="font-size:8px;">'+j.status+'</span>':'')+'</div></div>';}).join('');
   dd.classList.add('show');
@@ -1761,7 +1875,9 @@ function bulkWA(){
 function genInvoice(){
   var id=(document.getElementById('inv_input').value||'').trim().toUpperCase();
   if(!id){toast('Please enter a Job ID',true);return;}
-  var j=loadJobs().find(function(x){return(x.jobId||'').toUpperCase()===id;});
+  var jobs=loadJobs();
+  var j=jobs.find(function(x){return(x.jobId||'').toUpperCase()===(id.toUpperCase());});
+  if(!j)j=jobs.find(function(x){return(x.jobId||'').toLowerCase().includes(id.toLowerCase());});
   if(!j){document.getElementById('inv_out').innerHTML='<div class="card" style="text-align:center;padding:36px;"><div style="font-size:32px;opacity:.3;margin-bottom:10px;">❌</div><div style="color:var(--muted);">Job ID <strong style="color:var(--white);">'+esc(id)+'</strong> not found in the system.</div></div>';return;}
   var parts=(j.partsUsed||[]).filter(function(p){return p.name&&p.name.trim();}),cost=parseFloat(j.finalCost)||0,adv=parseFloat(j.advance)||0,bal=Math.max(0,cost-adv),isPaid=bal<=0,invNo='INV-'+j.jobId;
   var rows='';
@@ -1785,7 +1901,7 @@ function genInvoice(){
   inv+='<div style="text-align:center;font-size:8px;color:#8B6914;font-style:italic;background:#fffdf0;border:1px solid #e8d9b0;border-radius:4px;padding:5px;margin-bottom:6px;">💛 Thank you for trusting OM SAI Apple Service Hub. Your satisfaction is our commitment!</div>';
   inv+='<div style="text-align:center;border-top:1px solid #eee;padding-top:5px;font-size:7px;color:#aaa;line-height:1.5;">OM SAI Apple Service Hub · +91-7208325405 · Dattapada Rd, Borivali (E), Mumbai – 400066<br>'+esc(invNo)+' | Job: '+esc(j.jobId)+' | Computer-generated invoice, no handwritten signature required</div>';
   inv+='</div>';
-  document.getElementById('inv_out').innerHTML='<div class="card"><div class="card-hd"><div class="card-ico">🧾</div><div class="card-ttl">Invoice Preview — '+esc(invNo)+'</div><div style="margin-left:auto;display:flex;gap:7px;"><button class="btn btn-gold btn-sm" onclick="printInv()">📥 Download PDF</button><button class="btn btn-green btn-sm" onclick="invWA(\''+esc(j.jobId)+'\')">💬 WhatsApp</button><button class="btn btn-outline btn-sm" onclick="clearInvoice()">✕</button></div></div><div class="inv-preview">'+inv+'</div></div>';
+  document.getElementById('inv_out').innerHTML='<div class="card"><div class="card-hd"><div class="card-ico">🧾</div><div class="card-ttl">Invoice Preview — '+esc(invNo)+'</div><div style="margin-left:auto;display:flex;gap:7px;"><button class="btn btn-gold btn-sm" onclick="printInv()">🖨️ Print / Save PDF</button><button class="btn btn-green btn-sm" onclick="invWA(\''+esc(j.jobId)+'\')">💬 WhatsApp</button><button class="btn btn-outline btn-sm" onclick="clearInvoice()">✕</button></div></div><div class="inv-preview">'+inv+'</div></div>';
   document.getElementById('printArea').innerHTML=inv;
   toast('Invoice generated for '+esc(j.firstName)+' '+esc(j.lastName),false);
 }
@@ -1793,11 +1909,13 @@ function clearInvoice(){document.getElementById('inv_input').value='';document.g
 function printInv(){
   var el=document.getElementById('printArea');
   if(!el||!el.innerHTML){toast('Nothing to download',true);return;}
-  var id=(document.getElementById('inv_input').value||'invoice').trim().toUpperCase();
-  var fname='OM-SAI-Invoice-'+id+'.pdf';
-  var opt={margin:6,filename:fname,image:{type:'jpeg',quality:0.98},html2canvas:{scale:2,useCORS:true,letterRendering:true},jsPDF:{unit:'mm',format:'a5',orientation:'portrait'}};
-  toast('Preparing PDF…',false);
-  html2pdf().set(opt).from(el).save().then(function(){toast('PDF downloaded!',false);});
+  var styles='';
+  document.querySelectorAll('style').forEach(function(s){styles+=s.innerHTML;});
+  var win=window.open('','_blank','width=800,height=900');
+  if(!win){toast('Please allow pop-ups and try again',true);return;}
+  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><style>'+styles+'body{background:#fff;padding:10mm;margin:0;}@page{size:A5;margin:6mm;}@media print{body{padding:0;}}</style></head><body>'+el.innerHTML+'</body></html>');
+  win.document.close();
+  setTimeout(function(){win.focus();win.print();},800);
 }
 function invWA(jobId){var j=loadJobs().find(function(x){return x.jobId===jobId;});if(!j)return;var c=parseFloat(j.finalCost)||0,a=parseFloat(j.advance)||0,b=Math.max(0,c-a),ip=b<=0;var pt=(j.partsUsed||[]).filter(function(p){return p.name&&p.name.trim();}).map(function(p){return'  • '+p.name+(p.qty&&p.qty!='1'?' ×'+p.qty:'')+(parseFloat(p.price)>0?' — ₹'+p.price:'');}).join('\n')||'  • General repair service';var msg='🧾 *Invoice — OM SAI Apple Service Hub*\n\nInvoice: INV-'+j.jobId+'\nJob: '+j.jobId+'\nCustomer: '+j.firstName+' '+j.lastName+'\nDevice: '+j.devType+' '+j.devModel+'\n\n*Services:*\n'+pt+'\n\n'+(c>0?'Total: ₹'+c.toFixed(0)+'\n':'')+(a>0?'Advance: ₹'+a.toFixed(0)+'\n':'')+(ip?'*Status: FULLY PAID ✅*':'*Balance Due: ₹'+b.toFixed(0)+'*')+'\n\nWarranty: 30 Days on replaced parts.\nThank you!\n📞 +91-7208325405';var d=(j.phone||'').replace(/\D/g,'');if(d.length<10){toast('No valid phone',true);return;}window.open('https://wa.me/91'+d.slice(-10)+'?text='+encodeURIComponent(msg),'_blank');}
 
@@ -1933,11 +2051,14 @@ function printDailySummary(){
     (pendingCollection.length?'<div style="font-size:9px;font-weight:700;color:#C9A84C;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">Pending Customer Collection</div><table style="width:100%;border-collapse:collapse;font-size:10px;margin-bottom:12px;"><thead><tr style="background:#fff8e1;"><th style="padding:5px 7px;border:1px solid #e8e0cc;text-align:left;">Job ID</th><th style="padding:5px 7px;border:1px solid #e8e0cc;text-align:left;">Customer</th><th style="padding:5px 7px;border:1px solid #e8e0cc;text-align:left;">Phone</th><th style="padding:5px 7px;border:1px solid #e8e0cc;text-align:right;">Balance</th></tr></thead><tbody>'+pRows+'</tbody></table>':'<div style="font-size:10px;color:#2E7D32;font-weight:700;margin-bottom:12px;">✓ No devices pending collection.</div>')+
     '<div style="border-top:1px solid #eee;padding-top:8px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:10px;"><div><span style="color:#888;">Total Billed:</span> <strong>₹'+billed.toFixed(0)+'</strong></div><div><span style="color:#888;">Collected:</span> <strong>₹'+collected.toFixed(0)+'</strong></div><div><span style="color:#888;">Outstanding:</span> <strong>₹'+(billed-collected).toFixed(0)+'</strong></div></div>'+
     '<div style="text-align:center;border-top:1px solid #eee;padding-top:7px;margin-top:10px;font-size:8px;color:#aaa;">OM SAI Apple Service Hub · Daily Summary · Generated '+new Date().toLocaleString('en-IN')+'</div></div>';
-  var fname='OM-SAI-Daily-Summary-'+dateVal+'.pdf';
   var el=document.getElementById('printArea');
-  var opt={margin:6,filename:fname,image:{type:'jpeg',quality:0.98},html2canvas:{scale:2,useCORS:true,letterRendering:true},jsPDF:{unit:'mm',format:'a5',orientation:'portrait'}};
-  toast('Preparing PDF…',false);
-  setTimeout(function(){html2pdf().set(opt).from(el).save().then(function(){toast('PDF downloaded!',false);});},200);
+  var styles='';
+  document.querySelectorAll('style').forEach(function(s){styles+=s.innerHTML;});
+  var win=window.open('','_blank','width=800,height=900');
+  if(!win){toast('Please allow pop-ups and try again',true);return;}
+  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><style>'+styles+'body{background:#fff;padding:10mm;margin:0;}@page{size:A5;margin:6mm;}@media print{body{padding:0;}}</style></head><body>'+el.innerHTML+'</body></html>');
+  win.document.close();
+  setTimeout(function(){win.focus();win.print();},600);
 }
 
 /* ── ANALYTICS ── */
