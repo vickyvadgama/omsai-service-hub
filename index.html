@@ -7,6 +7,7 @@
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230A0A0A'/><text y='72' x='50' text-anchor='middle' font-size='65' fill='%23C9A84C' font-family='serif'>ॐ</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <!-- Firebase -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
@@ -711,7 +712,7 @@ body{background:var(--black);color:var(--white);font-family:'DM Sans',sans-serif
       <div class="fbar" style="margin-bottom:16px;">
         <input type="date" class="sinp" id="ds_date" style="max-width:180px;" onchange="renderDailySummary()">
         <button class="btn btn-outline btn-sm" onclick="document.getElementById('ds_date').value=new Date().toISOString().split('T')[0];renderDailySummary()">Today</button>
-        <button class="btn btn-gold btn-sm" onclick="printDailySummary()">🖨️ Print Summary</button>
+        <button class="btn btn-gold btn-sm" onclick="printDailySummary()">📥 Download PDF</button>
       </div>
       <div id="ds_content"></div>
     </div>
@@ -916,7 +917,7 @@ body{background:var(--black);color:var(--white);font-family:'DM Sans',sans-serif
   <div class="suc-id" id="suc_id">OM-2026-XXXX</div>
   <div class="suc-msg" id="suc_msg"></div>
   <div class="suc-btns">
-    <button class="btn btn-gold" onclick="doPrint()">🖨️ Print Service Report</button>
+    <button class="btn btn-gold" onclick="doPrint()">📥 Download PDF</button>
     <button class="btn" style="background:#25D366;color:#fff;border:none;" onclick="doWA()">💬 WhatsApp Customer</button>
     <button class="btn btn-outline" onclick="nav('techpanel');document.getElementById('successOverlay').classList.remove('show')">🔧 Open Tech Panel</button>
     <button class="btn btn-outline" onclick="newJob()">+ New Job</button>
@@ -1414,7 +1415,16 @@ function buildSR(j){
   var qrEl=document.getElementById(qid);
   if(qrEl){qrEl.innerHTML='';try{new QRCode(qrEl,{text:'OM SAI Apple Service Hub\n'+docTitle+'\nJob ID: '+j.jobId+'\n'+(j.firstName||'')+' '+(j.lastName||'')+'\n'+(j.devType||'')+' '+(j.devModel||'')+'\n+91-7208325405',width:56,height:56,colorDark:'#000',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.M});}catch(e){}}
 }
-function printSR(){window.print();}
+function printSR(){
+  var el=document.getElementById('printArea');
+  if(!el||!el.innerHTML){toast('Nothing to download',true);return;}
+  var jobId=(_job&&_job.jobId)||'report';
+  var isFinal=_job&&(_job.status==='Ready'||_job.status==='Delivered');
+  var fname='OM-SAI-'+(isFinal?'Final-Report':'Service-Report')+'-'+jobId+'.pdf';
+  var opt={margin:6,filename:fname,image:{type:'jpeg',quality:0.98},html2canvas:{scale:2,useCORS:true,letterRendering:true},jsPDF:{unit:'mm',format:'a5',orientation:'portrait'}};
+  toast('Preparing PDF…',false);
+  html2pdf().set(opt).from(el).save().then(function(){toast('PDF downloaded!',false);});
+}
 function sf(l,v){return'<div class="sr-f"><div class="sr-fl">'+l+'</div><div class="sr-fv">'+v+'</div></div>';}
 
 /* ── TECHNICIAN PANEL ── */
@@ -1444,7 +1454,7 @@ function renderTPDetail(j){
   var h='<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:14px;flex-wrap:wrap;">';
   h+='<div><div style="font-family:\'JetBrains Mono\',monospace;font-size:17px;font-weight:700;color:var(--gold);">'+esc(j.jobId)+'</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">'+esc(j.isoDate||j.date||'')+'</div></div>';
   h+='<div style="display:flex;gap:6px;flex-wrap:wrap;">';
-  h+='<button class="btn btn-gold btn-sm" onclick="printSRFor(\''+esc(j.jobId)+'\')">🖨️ '+(j.status==='Ready'||j.status==='Delivered'?'Final Report':'Service Report')+'</button>';
+  h+='<button class="btn btn-gold btn-sm" onclick="printSRFor(\''+esc(j.jobId)+'\')">📥 '+(j.status==='Ready'||j.status==='Delivered'?'Final Report PDF':'Service Report PDF')+'</button>';
   h+='<button class="btn btn-outline btn-sm" onclick="openEdit(\''+esc(j.jobId)+'\')">✏️ Edit Job</button>';
   h+='<button class="btn btn-green btn-sm" onclick="tpWA(\''+esc(j.jobId)+'\')">💬 WhatsApp</button>';
   h+='<button class="btn btn-outline btn-sm" onclick="nav(\'invoice\');setTimeout(function(){document.getElementById(\'inv_input\').value=\''+esc(j.jobId)+'\';invSearch();},80)">🧾 Invoice</button>';
@@ -1775,12 +1785,20 @@ function genInvoice(){
   inv+='<div style="text-align:center;font-size:8px;color:#8B6914;font-style:italic;background:#fffdf0;border:1px solid #e8d9b0;border-radius:4px;padding:5px;margin-bottom:6px;">💛 Thank you for trusting OM SAI Apple Service Hub. Your satisfaction is our commitment!</div>';
   inv+='<div style="text-align:center;border-top:1px solid #eee;padding-top:5px;font-size:7px;color:#aaa;line-height:1.5;">OM SAI Apple Service Hub · +91-7208325405 · Dattapada Rd, Borivali (E), Mumbai – 400066<br>'+esc(invNo)+' | Job: '+esc(j.jobId)+' | Computer-generated invoice, no handwritten signature required</div>';
   inv+='</div>';
-  document.getElementById('inv_out').innerHTML='<div class="card"><div class="card-hd"><div class="card-ico">🧾</div><div class="card-ttl">Invoice Preview — '+esc(invNo)+'</div><div style="margin-left:auto;display:flex;gap:7px;"><button class="btn btn-gold btn-sm" onclick="printInv()">🖨️ Print</button><button class="btn btn-green btn-sm" onclick="invWA(\''+esc(j.jobId)+'\')">💬 WhatsApp</button><button class="btn btn-outline btn-sm" onclick="clearInvoice()">✕</button></div></div><div class="inv-preview">'+inv+'</div></div>';
+  document.getElementById('inv_out').innerHTML='<div class="card"><div class="card-hd"><div class="card-ico">🧾</div><div class="card-ttl">Invoice Preview — '+esc(invNo)+'</div><div style="margin-left:auto;display:flex;gap:7px;"><button class="btn btn-gold btn-sm" onclick="printInv()">📥 Download PDF</button><button class="btn btn-green btn-sm" onclick="invWA(\''+esc(j.jobId)+'\')">💬 WhatsApp</button><button class="btn btn-outline btn-sm" onclick="clearInvoice()">✕</button></div></div><div class="inv-preview">'+inv+'</div></div>';
   document.getElementById('printArea').innerHTML=inv;
   toast('Invoice generated for '+esc(j.firstName)+' '+esc(j.lastName),false);
 }
 function clearInvoice(){document.getElementById('inv_input').value='';document.getElementById('inv_out').innerHTML='<div class="card" style="text-align:center;padding:48px 24px;"><div style="font-size:44px;opacity:.2;margin-bottom:12px;">🧾</div><div style="font-size:13px;color:var(--muted);">Enter a Job ID above and click Generate.</div></div>';}
-function printInv(){setTimeout(function(){window.print();},100);}
+function printInv(){
+  var el=document.getElementById('printArea');
+  if(!el||!el.innerHTML){toast('Nothing to download',true);return;}
+  var id=(document.getElementById('inv_input').value||'invoice').trim().toUpperCase();
+  var fname='OM-SAI-Invoice-'+id+'.pdf';
+  var opt={margin:6,filename:fname,image:{type:'jpeg',quality:0.98},html2canvas:{scale:2,useCORS:true,letterRendering:true},jsPDF:{unit:'mm',format:'a5',orientation:'portrait'}};
+  toast('Preparing PDF…',false);
+  html2pdf().set(opt).from(el).save().then(function(){toast('PDF downloaded!',false);});
+}
 function invWA(jobId){var j=loadJobs().find(function(x){return x.jobId===jobId;});if(!j)return;var c=parseFloat(j.finalCost)||0,a=parseFloat(j.advance)||0,b=Math.max(0,c-a),ip=b<=0;var pt=(j.partsUsed||[]).filter(function(p){return p.name&&p.name.trim();}).map(function(p){return'  • '+p.name+(p.qty&&p.qty!='1'?' ×'+p.qty:'')+(parseFloat(p.price)>0?' — ₹'+p.price:'');}).join('\n')||'  • General repair service';var msg='🧾 *Invoice — OM SAI Apple Service Hub*\n\nInvoice: INV-'+j.jobId+'\nJob: '+j.jobId+'\nCustomer: '+j.firstName+' '+j.lastName+'\nDevice: '+j.devType+' '+j.devModel+'\n\n*Services:*\n'+pt+'\n\n'+(c>0?'Total: ₹'+c.toFixed(0)+'\n':'')+(a>0?'Advance: ₹'+a.toFixed(0)+'\n':'')+(ip?'*Status: FULLY PAID ✅*':'*Balance Due: ₹'+b.toFixed(0)+'*')+'\n\nWarranty: 30 Days on replaced parts.\nThank you!\n📞 +91-7208325405';var d=(j.phone||'').replace(/\D/g,'');if(d.length<10){toast('No valid phone',true);return;}window.open('https://wa.me/91'+d.slice(-10)+'?text='+encodeURIComponent(msg),'_blank');}
 
 /* ── ALL JOBS ── */
@@ -1915,7 +1933,11 @@ function printDailySummary(){
     (pendingCollection.length?'<div style="font-size:9px;font-weight:700;color:#C9A84C;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">Pending Customer Collection</div><table style="width:100%;border-collapse:collapse;font-size:10px;margin-bottom:12px;"><thead><tr style="background:#fff8e1;"><th style="padding:5px 7px;border:1px solid #e8e0cc;text-align:left;">Job ID</th><th style="padding:5px 7px;border:1px solid #e8e0cc;text-align:left;">Customer</th><th style="padding:5px 7px;border:1px solid #e8e0cc;text-align:left;">Phone</th><th style="padding:5px 7px;border:1px solid #e8e0cc;text-align:right;">Balance</th></tr></thead><tbody>'+pRows+'</tbody></table>':'<div style="font-size:10px;color:#2E7D32;font-weight:700;margin-bottom:12px;">✓ No devices pending collection.</div>')+
     '<div style="border-top:1px solid #eee;padding-top:8px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:10px;"><div><span style="color:#888;">Total Billed:</span> <strong>₹'+billed.toFixed(0)+'</strong></div><div><span style="color:#888;">Collected:</span> <strong>₹'+collected.toFixed(0)+'</strong></div><div><span style="color:#888;">Outstanding:</span> <strong>₹'+(billed-collected).toFixed(0)+'</strong></div></div>'+
     '<div style="text-align:center;border-top:1px solid #eee;padding-top:7px;margin-top:10px;font-size:8px;color:#aaa;">OM SAI Apple Service Hub · Daily Summary · Generated '+new Date().toLocaleString('en-IN')+'</div></div>';
-  setTimeout(printSR,200);
+  var fname='OM-SAI-Daily-Summary-'+dateVal+'.pdf';
+  var el=document.getElementById('printArea');
+  var opt={margin:6,filename:fname,image:{type:'jpeg',quality:0.98},html2canvas:{scale:2,useCORS:true,letterRendering:true},jsPDF:{unit:'mm',format:'a5',orientation:'portrait'}};
+  toast('Preparing PDF…',false);
+  setTimeout(function(){html2pdf().set(opt).from(el).save().then(function(){toast('PDF downloaded!',false);});},200);
 }
 
 /* ── ANALYTICS ── */
