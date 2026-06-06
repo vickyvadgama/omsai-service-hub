@@ -1,0 +1,2045 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OM SAI Apple Service Hub — Management System</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230A0A0A'/><text y='72' x='50' text-anchor='middle' font-size='65' fill='%23C9A84C' font-family='serif'>ॐ</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<!-- Firebase -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+  import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDn9bCPaXg9KeRUJQeaPEAzE6WZN36D3po",
+    authDomain: "omsai-service-hub.firebaseapp.com",
+    projectId: "omsai-service-hub",
+    storageBucket: "omsai-service-hub.firebasestorage.app",
+    messagingSenderId: "603240765840",
+    appId: "1:603240765840:web:b8b3a984c7b6619bc17b15"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const JOBS_COL = collection(db, 'jobs');
+
+  // Expose Firebase helpers to global scope
+  window._fb = {
+    async saveJob(job) {
+      try {
+        await setDoc(doc(db, 'jobs', job.jobId), job);
+      } catch(e) { console.error('FB save error:', e); }
+    },
+    async deleteJob(jobId) {
+      try {
+        await deleteDoc(doc(db, 'jobs', jobId));
+      } catch(e) { console.error('FB delete error:', e); }
+    },
+    async loadAllJobs() {
+      try {
+        const snap = await getDocs(JOBS_COL);
+        return snap.docs.map(d => d.data());
+      } catch(e) { console.error('FB load error:', e); return null; }
+    },
+    // Live sync — updates localStorage + UI whenever Firestore changes
+    startSync() {
+      onSnapshot(JOBS_COL, (snap) => {
+        const jobs = snap.docs.map(d => d.data());
+        localStorage.setItem('omSaiJobs', JSON.stringify(jobs));
+        const st = document.getElementById('fbStatus');
+        if(st) st.innerHTML = '☁ <span style="color:#2ECC71;">Cloud Synced ✓</span>';
+        if(window._fbSyncReady) {
+          window.refreshAll && window.refreshAll();
+          const pages = ['dashboard','alljobs','techpanel','analytics','dailysummary','customers','inventory','reports','settings'];
+          pages.forEach(function(id){
+            var pg = document.getElementById('page-'+id);
+            if(pg && pg.classList.contains('on')) {
+              window.nav && window.nav(id);
+            }
+          });
+        }
+      }, (e) => {
+        console.error('FB sync error:', e);
+        const st = document.getElementById('fbStatus');
+        if(st) st.innerHTML = '☁ <span style="color:#E74C3C;">Offline</span>';
+      });
+    }
+  };
+
+  // On load: pull from Firestore into localStorage, then init app
+  window._fb.loadAllJobs().then(jobs => {
+    if(jobs) {
+      localStorage.setItem('omSaiJobs', JSON.stringify(jobs));
+      console.log('[Firebase] Loaded ' + jobs.length + ' jobs from cloud');
+    }
+    window._fbSyncReady = true;
+    window._fb.startSync();
+    // Trigger re-render if app already authenticated
+    if(window.refreshAll) window.refreshAll();
+  });
+</script>
+<style>
+:root{--gold:#C9A84C;--gold-light:#F0C040;--gold-dark:#8B6914;--black:#090909;--dark2:#111;--dark3:#181818;--dark4:#202020;--dark5:#282828;--white:#FFF;--offwhite:#F5F0E8;--muted:#555;--mid:#888;--bright:#CCC;--green:#2ECC71;--red:#E74C3C;--orange:#F39C12;--blue:#3498DB;--purple:#9B59B6;--border:rgba(201,168,76,.14);--border2:rgba(255,255,255,.05);--sb:240px;}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{background:var(--black);color:var(--white);font-family:'DM Sans',sans-serif;overflow-x:hidden;}
+.bg-grid{position:fixed;inset:0;pointer-events:none;z-index:0;background-image:linear-gradient(rgba(201,168,76,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(201,168,76,.02) 1px,transparent 1px);background-size:64px 64px;}
+/* LOGIN */
+#loginGate{position:fixed;inset:0;z-index:9999;background:var(--black);display:flex;align-items:center;justify-content:center;}
+#loginGate.h{display:none;}
+.lb{width:400px;max-width:94vw;background:var(--dark3);border:1px solid rgba(201,168,76,.25);border-radius:20px;padding:38px 34px;position:relative;z-index:1;}
+.lb-om{font-size:44px;color:var(--gold);font-family:'Playfair Display',serif;display:block;text-align:center;line-height:1;}
+.lb-brand{font-family:'Playfair Display',serif;font-size:15px;font-weight:900;background:linear-gradient(135deg,var(--gold-light),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;display:block;text-align:center;margin:6px 0 2px;}
+.lb-sub{font-size:10px;color:var(--muted);letter-spacing:.18em;text-transform:uppercase;display:block;text-align:center;margin-bottom:22px;}
+.lb-label{font-size:10px;font-weight:700;color:var(--gold);letter-spacing:.12em;text-transform:uppercase;display:block;margin-bottom:6px;}
+.lb-input{width:100%;background:var(--dark4);border:1px solid rgba(201,168,76,.18);border-radius:9px;padding:11px 13px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color .2s;margin-bottom:12px;}
+.lb-input:focus{border-color:var(--gold);}
+.lb-input.err{border-color:var(--red)!important;animation:sh .4s;}
+.lb-wrap{position:relative;}
+.lb-eye{position:absolute;right:11px;top:50%;transform:translateY(-60%);background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;}
+.lb-btn{width:100%;background:linear-gradient(135deg,var(--gold-light),var(--gold));color:var(--black);font-weight:700;font-size:13px;padding:13px;border-radius:9px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;letter-spacing:.05em;text-transform:uppercase;margin-top:4px;transition:opacity .2s;}
+.lb-btn:hover{opacity:.88;}
+.lb-btn:disabled{opacity:.45;cursor:not-allowed;}
+.lb-err{font-size:12px;color:var(--red);margin-top:8px;display:none;text-align:center;}
+.lb-err.show{display:block;}
+.lb-att{font-size:11px;color:var(--orange);text-align:center;margin-top:4px;}
+.lb-lock{background:rgba(231,76,60,.07);border:1px solid rgba(231,76,60,.2);border-radius:8px;padding:12px;margin-top:10px;text-align:center;display:none;}
+.lb-lock.show{display:block;}
+.lb-lock-t{font-size:11px;font-weight:700;color:var(--red);}
+.lb-lock-c{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;color:var(--red);}
+@keyframes sh{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+/* RECOVERY MODAL */
+#recoveryModal{position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.75);display:none;align-items:center;justify-content:center;padding:24px;}
+#recoveryModal.show{display:flex;}
+.rm-box{background:var(--dark3);border:1px solid rgba(201,168,76,.3);border-radius:16px;padding:30px 28px;width:100%;max-width:400px;position:relative;}
+.rm-close{position:absolute;top:12px;right:14px;background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;}
+.rm-close:hover{color:var(--white);}
+.rm-title{font-family:'Playfair Display',serif;font-size:17px;font-weight:700;color:var(--gold);margin-bottom:4px;}
+.rm-sub{font-size:11px;color:var(--muted);margin-bottom:20px;line-height:1.5;}
+.rm-step{display:none;}
+.rm-step.show{display:block;}
+.rm-creds{background:var(--dark4);border:1px solid var(--border);border-radius:10px;padding:14px;margin-top:4px;}
+.rm-cred-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:8px 0;border-bottom:1px solid var(--border2);font-size:12px;align-items:center;}
+.rm-cred-row:last-child{border-bottom:none;}
+.rm-cred-hd{font-size:9px;font-weight:700;color:var(--gold);letter-spacing:.1em;text-transform:uppercase;}
+.rm-mono{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--offwhite);}
+.rm-role{font-size:10px;padding:2px 7px;border-radius:100px;}
+.rm-warn{background:rgba(243,156,18,.08);border:1px solid rgba(243,156,18,.25);border-radius:8px;padding:9px 12px;font-size:10px;color:#F39C12;margin-top:12px;line-height:1.5;}
+.rm-q{background:var(--dark4);border:1px solid var(--border);border-radius:9px;padding:11px 13px;font-size:12px;color:var(--mid);margin-bottom:12px;line-height:1.6;}
+.rm-q strong{color:var(--gold);}
+.forgot-link{display:block;text-align:center;margin-top:12px;font-size:11px;color:var(--muted);cursor:pointer;transition:color .2s;}
+.forgot-link:hover{color:var(--gold);}
+/* RESET PASSWORD TAB */
+.rm-tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:16px;}
+.rm-tab{flex:1;text-align:center;padding:8px 4px;font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;letter-spacing:.04em;}
+.rm-tab.active{color:var(--gold);border-bottom-color:var(--gold);}
+.rm-tab-panel{display:none;}
+.rm-tab-panel.active{display:block;}
+.otp-row{display:flex;gap:7px;margin-bottom:10px;}
+.otp-inp{flex:1;background:var(--dark4);border:1px solid rgba(201,168,76,.18);border-radius:9px;padding:11px 13px;color:var(--white);font-family:'JetBrains Mono',monospace;font-size:16px;text-align:center;outline:none;transition:border-color .2s;letter-spacing:.1em;}
+.otp-inp:focus{border-color:var(--gold);}
+.otp-inp.err{border-color:var(--red)!important;}
+.otp-send-btn{white-space:nowrap;background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.3);border-radius:9px;color:var(--gold);font-size:11px;font-weight:700;padding:0 13px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;}
+.otp-send-btn:hover{background:rgba(201,168,76,.2);}
+.otp-send-btn:disabled{opacity:.4;cursor:not-allowed;}
+.pw-strength{height:3px;border-radius:100px;margin-top:5px;transition:all .3s;background:var(--border);}
+.pw-str-weak{background:var(--red);width:33%;}
+.pw-str-med{background:var(--orange);width:66%;}
+.pw-str-strong{background:var(--green);width:100%;}
+.rm-success{text-align:center;padding:10px 0;}
+.rm-success-ico{font-size:36px;margin-bottom:8px;}
+.rm-success-t{font-size:14px;font-weight:700;color:var(--green);margin-bottom:4px;}
+.rm-success-s{font-size:11px;color:var(--muted);line-height:1.5;}
+/* SHELL */
+.shell{display:flex;height:100vh;position:relative;z-index:1;}
+/* SIDEBAR */
+.sidebar{width:var(--sb);background:var(--dark2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:50;overflow:hidden;}
+.sb-logo{padding:16px 16px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:9px;flex-shrink:0;}
+.sb-om{font-size:24px;color:var(--gold);font-family:'Playfair Display',serif;line-height:1;}
+.sb-brand strong{background:linear-gradient(135deg,var(--gold-light),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-family:'Playfair Display',serif;font-size:11px;display:block;}
+.sb-brand span{font-size:8.5px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;}
+.sb-user{padding:9px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.sb-av{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--gold-dark),var(--gold));display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--black);flex-shrink:0;}
+.sb-un{font-size:11px;font-weight:600;color:var(--white);}
+.sb-ur{font-size:9px;color:var(--gold);font-family:'JetBrains Mono',monospace;}
+.sb-lo{background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;margin-left:auto;transition:color .2s;}
+.sb-lo:hover{color:var(--red);}
+.sb-nav{flex:1;overflow-y:auto;padding:8px 6px;}
+.sb-nav::-webkit-scrollbar{width:2px;}
+.sb-nav::-webkit-scrollbar-thumb{background:rgba(201,168,76,.15);}
+.sb-sec{font-size:8.5px;font-weight:700;color:var(--muted);letter-spacing:.15em;text-transform:uppercase;padding:10px 8px 4px;}
+.ni{display:flex;align-items:center;gap:9px;padding:8px 9px;border-radius:8px;cursor:pointer;transition:all .15s;margin-bottom:1px;border:1px solid transparent;color:var(--mid);}
+.ni:hover{background:rgba(201,168,76,.05);color:var(--white);border-color:var(--border);}
+.ni.on{background:rgba(201,168,76,.09);color:var(--gold);border-color:rgba(201,168,76,.2);}
+.ni-ico{width:28px;height:28px;border-radius:7px;background:var(--dark4);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+.ni.on .ni-ico{background:rgba(201,168,76,.12);border-color:rgba(201,168,76,.25);}
+.ni-lbl{font-size:12px;font-weight:500;flex:1;}
+.ni-badge{font-size:9px;font-weight:700;background:var(--gold);color:var(--black);padding:1px 6px;border-radius:100px;min-width:16px;text-align:center;}
+.sb-foot{padding:10px 12px;border-top:1px solid var(--border);flex-shrink:0;}
+.sb-clk{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);text-align:center;}
+/* MAIN */
+.main{margin-left:var(--sb);flex:1;display:flex;flex-direction:column;min-height:100vh;overflow:hidden;}
+.topbar{background:rgba(9,9,9,.96);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:10px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-shrink:0;}
+.tb-ttl{font-family:'Playfair Display',serif;font-size:17px;font-weight:700;}
+.tb-ttl span{color:var(--gold);}
+.tb-right{display:flex;align-items:center;gap:8px;}
+.tb-badge{display:flex;align-items:center;gap:5px;background:var(--dark3);border:1px solid var(--border);padding:4px 10px;border-radius:100px;font-size:10px;color:var(--gold);font-family:'JetBrains Mono',monospace;}
+.pulse{width:5px;height:5px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.4)}}
+.tb-btn{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);border:1px solid var(--border);padding:5px 11px;border-radius:6px;background:none;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .18s;}
+.tb-btn:hover{border-color:var(--gold);color:var(--gold);}
+/* PAGES */
+.page{display:none;flex:1;overflow-y:auto;padding:20px 24px 60px;}
+.page.on{display:block;}
+.page-hd{margin-bottom:18px;}
+.page-ttl{font-family:'Playfair Display',serif;font-size:20px;font-weight:900;}
+.page-ttl span{background:linear-gradient(135deg,var(--gold-light),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.page-sub{font-size:12px;color:var(--muted);margin-top:3px;}
+/* STATS */
+.stats-row{display:grid;grid-template-columns:repeat(5,1fr);gap:11px;margin-bottom:18px;}
+.sc{background:var(--dark3);border:1px solid var(--border);border-radius:12px;padding:14px 16px;position:relative;overflow:hidden;}
+.sc::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.sc-g::before{background:linear-gradient(90deg,#1a6,var(--green));}
+.sc-b::before{background:linear-gradient(90deg,#148,var(--blue));}
+.sc-o::before{background:linear-gradient(90deg,#740,var(--orange));}
+.sc-p::before{background:linear-gradient(90deg,#528,var(--purple));}
+.sc-gold::before{background:linear-gradient(90deg,var(--gold-dark),var(--gold));}
+.sc-ico{font-size:18px;margin-bottom:7px;}
+.sc-val{font-family:'Playfair Display',serif;font-size:24px;font-weight:900;line-height:1;}
+.sc-lbl{font-size:10px;color:var(--muted);margin-top:3px;}
+.sc-sub{font-size:9.5px;margin-top:4px;font-family:'JetBrains Mono',monospace;color:var(--gold);}
+/* CARDS */
+.card{background:var(--dark3);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:14px;}
+.card-hd{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:9px;background:linear-gradient(135deg,rgba(201,168,76,.05),transparent);}
+.card-ico{width:30px;height:30px;border-radius:8px;background:rgba(201,168,76,.07);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:14px;}
+.card-ttl{font-weight:600;font-size:13px;}
+.card-sub2{font-size:10px;color:var(--muted);}
+.card-body{padding:16px 18px;}
+/* FORM */
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-bottom:13px;}
+.frow.r1{grid-template-columns:1fr;}
+.frow.r3{grid-template-columns:1fr 1fr 1fr;}
+.field{display:flex;flex-direction:column;gap:5px;}
+.field label{font-size:10px;font-weight:700;color:var(--gold);letter-spacing:.1em;text-transform:uppercase;}
+.field input,.field select,.field textarea{background:var(--dark4);border:1px solid rgba(201,168,76,.17);border-radius:8px;padding:10px 12px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;transition:border-color .2s;width:100%;}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--gold);}
+.field input.err{border-color:var(--red)!important;}
+.field textarea{resize:vertical;min-height:80px;}
+.field select{appearance:none;cursor:pointer;}
+.field select option{background:var(--dark4);}
+.errmsg{font-size:10px;color:var(--red);display:none;}
+.errmsg.show{display:block;}
+.ph-wrap{display:flex;align-items:stretch;}
+.ph-pre{display:flex;align-items:center;padding:0 10px;background:var(--dark5);border:1px solid rgba(201,168,76,.17);border-right:none;border-radius:8px 0 0 8px;color:var(--gold);font-size:12px;font-weight:700;white-space:nowrap;}
+.ph-wrap input{border-radius:0 8px 8px 0!important;}
+.req{color:var(--red);}
+/* CHIPS */
+.chips{display:flex;gap:7px;flex-wrap:wrap;}
+.chip{padding:6px 12px;border-radius:100px;border:1px solid rgba(201,168,76,.2);background:var(--dark4);color:var(--mid);font-size:11px;font-weight:500;cursor:pointer;transition:all .18s;user-select:none;}
+.chip:hover{border-color:var(--gold);color:var(--gold);}
+.chip.sel{background:var(--gold);border-color:var(--gold);color:var(--black);font-weight:700;}
+/* CHECKLIST */
+.chklist{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;}
+.chk{display:flex;align-items:center;justify-content:space-between;gap:6px;background:var(--dark4);border:1px solid var(--border);border-radius:8px;padding:8px 11px;transition:all .18s;}
+.chk-lbl{font-size:11px;color:var(--mid);flex:1;}
+.chk-btns{display:flex;gap:4px;}
+.chk-btn{padding:3px 7px;border-radius:5px;font-size:10px;font-weight:600;border:1px solid var(--border);background:var(--dark5);color:var(--muted);cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif;}
+.chk-btn.ok-on{background:rgba(46,204,113,.15);border-color:var(--green);color:var(--green);}
+.chk-btn.na-on{background:rgba(255,165,0,.1);border-color:#FFA500;color:#FFA500;}
+.chk.st-ok{border-color:rgba(46,204,113,.3);}
+.chk.st-na{border-color:rgba(255,165,0,.25);}
+/* STATUS STEPS */
+.ssteps{display:flex;align-items:center;}
+.sstep{display:flex;flex-direction:column;align-items:center;flex:1;}
+.sdot{width:32px;height:32px;border-radius:50%;border:2px solid rgba(201,168,76,.25);background:var(--dark4);display:flex;align-items:center;justify-content:center;font-size:13px;cursor:pointer;transition:all .2s;}
+.sdot:hover{border-color:var(--gold);transform:scale(1.08);}
+.sdot.active{border-color:var(--gold);background:rgba(201,168,76,.15);box-shadow:0 0 12px rgba(201,168,76,.2);}
+.sdot.done{border-color:var(--green);background:var(--green);color:#000;}
+.slbl{font-size:9px;color:var(--muted);margin-top:5px;text-align:center;white-space:nowrap;}
+.sline{flex:1;height:2px;background:rgba(255,255,255,.05);margin-bottom:20px;transition:background .3s;}
+.sline.done{background:var(--green);}
+/* TABLES */
+.tbl-wrap{background:var(--dark3);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+.dtbl{width:100%;border-collapse:collapse;font-size:12px;}
+.dtbl thead tr{background:rgba(201,168,76,.05);border-bottom:1px solid var(--border);}
+.dtbl th{padding:10px 13px;text-align:left;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--gold);}
+.dtbl td{padding:9px 13px;border-bottom:1px solid var(--border2);color:var(--bright);vertical-align:middle;}
+.dtbl tbody tr:last-child td{border-bottom:none;}
+.dtbl tbody tr:hover td{background:rgba(201,168,76,.03);cursor:pointer;}
+.tbl-empty{text-align:center;padding:36px;color:var(--muted);font-size:13px;}
+.mono{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--gold);}
+.badge{display:inline-flex;align-items:center;font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:100px;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;}
+.st-received{background:rgba(52,152,219,.12);color:#3498DB;border:1px solid rgba(52,152,219,.28);}
+.st-diagnosed{background:rgba(243,156,18,.09);color:#F39C12;border:1px solid rgba(243,156,18,.28);}
+.st-repairing{background:rgba(201,168,76,.09);color:var(--gold);border:1px solid rgba(201,168,76,.28);}
+.st-ready{background:rgba(46,204,113,.09);color:var(--green);border:1px solid rgba(46,204,113,.28);}
+.st-delivered{background:rgba(255,255,255,.04);color:#555;border:1px solid rgba(255,255,255,.07);}
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;letter-spacing:.04em;text-transform:uppercase;transition:all .18s;white-space:nowrap;text-decoration:none;}
+.btn-gold{background:linear-gradient(135deg,var(--gold-light),var(--gold));color:var(--black);}
+.btn-gold:hover{transform:translateY(-1px);box-shadow:0 5px 18px rgba(201,168,76,.3);}
+.btn-outline{background:none;border:1px solid var(--border);color:var(--mid);}
+.btn-outline:hover{border-color:var(--gold);color:var(--gold);}
+.btn-green{background:rgba(46,204,113,.1);border:1px solid rgba(46,204,113,.28);color:var(--green);}
+.btn-green:hover{background:rgba(46,204,113,.18);}
+.btn-red{background:rgba(231,76,60,.08);border:1px solid rgba(231,76,60,.22);color:var(--red);}
+.btn-red:hover{background:rgba(231,76,60,.16);}
+.btn-sm{padding:6px 10px;font-size:10px;}
+.btn-xs{padding:3px 8px;font-size:9px;}
+/* FILTER BAR */
+.fbar{display:flex;gap:9px;margin-bottom:13px;flex-wrap:wrap;align-items:center;}
+.sinp{flex:1;min-width:180px;background:var(--dark3);border:1px solid var(--border);border-radius:8px;padding:8px 13px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:12px;outline:none;transition:border-color .2s;}
+.sinp:focus{border-color:var(--gold);}
+.sinp::placeholder{color:var(--muted);}
+.fsel{background:var(--dark3);border:1px solid var(--border);border-radius:8px;padding:8px 11px;color:var(--mid);font-family:'DM Sans',sans-serif;font-size:11px;outline:none;cursor:pointer;}
+.fsel:focus{border-color:var(--gold);}
+/* TECH PANEL */
+.tp-wrap{display:grid;grid-template-columns:290px 1fr;height:calc(100vh - 57px);overflow:hidden;}
+.tp-list{border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;background:var(--dark3);}
+.tp-list-hd{padding:12px 10px 8px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.tp-list-title{font-size:10px;font-weight:700;color:var(--gold);letter-spacing:.1em;text-transform:uppercase;margin-bottom:7px;}
+.tp-jobs{flex:1;overflow-y:auto;padding:5px;}
+.tp-jobs::-webkit-scrollbar{width:2px;}
+.tp-jobs::-webkit-scrollbar-thumb{background:rgba(201,168,76,.2);}
+.tp-job{padding:10px 11px;border-radius:8px;border:1px solid transparent;cursor:pointer;margin-bottom:3px;background:var(--dark4);transition:all .15s;}
+.tp-job:hover{border-color:var(--border);background:var(--dark5);}
+.tp-job.sel{border-color:var(--gold);background:rgba(201,168,76,.06);}
+.tj-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;}
+.tj-id{font-family:'JetBrains Mono',monospace;font-size:9.5px;font-weight:600;color:var(--gold);}
+.tj-name{font-size:11.5px;font-weight:600;margin-bottom:1px;}
+.tj-dev{font-size:9.5px;color:var(--muted);}
+.tj-date{font-size:8.5px;color:#444;margin-top:2px;}
+.tp-detail{overflow-y:auto;padding:16px 18px;background:var(--dark2);}
+.tp-no{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:var(--muted);text-align:center;padding:60px 20px;height:100%;}
+.tp-no-ico{font-size:48px;opacity:.2;}
+/* PARTS */
+.parts-tbl-wrap{border:1px solid rgba(201,168,76,.18);border-radius:9px;overflow:hidden;margin-bottom:10px;}
+.pts-tbl{width:100%;border-collapse:collapse;font-size:12px;}
+.pts-tbl thead tr{background:rgba(201,168,76,.07);border-bottom:1px solid rgba(201,168,76,.18);}
+.pts-tbl th{padding:7px 9px;text-align:left;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--gold);}
+.pts-tbl td{padding:4px 5px;border-bottom:1px solid rgba(255,255,255,.03);vertical-align:middle;}
+.pts-tbl tbody tr:last-child td{border-bottom:none;}
+.pts-inp{width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(201,168,76,.15);border-radius:6px;padding:5px 7px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:12px;outline:none;}
+.pts-inp:focus{border-color:var(--gold);}
+.pts-del{background:none;border:none;color:var(--red);cursor:pointer;font-size:16px;padding:0 4px;line-height:1;}
+/* INVOICE */
+.inv-preview{background:#fff;border-radius:0 0 8px 8px;overflow:hidden;}
+/* QA GRID */
+.qa-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:11px;margin-bottom:18px;}
+.qa{background:var(--dark3);border:1px solid var(--border);border-radius:11px;padding:14px;text-align:center;cursor:pointer;transition:all .18s;}
+.qa:hover{border-color:rgba(201,168,76,.3);background:rgba(201,168,76,.04);transform:translateY(-2px);}
+.qa-ico{font-size:22px;margin-bottom:6px;}
+.qa-lbl{font-size:10px;font-weight:600;color:var(--mid);}
+/* BAR CHART */
+.bar-wrap{display:flex;flex-direction:column;gap:6px;}
+.bar-row{display:flex;align-items:center;gap:7px;}
+.bar-name{font-size:10px;color:var(--mid);min-width:72px;text-align:right;}
+.bar-track{flex:1;height:9px;background:rgba(255,255,255,.04);border-radius:100px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:100px;transition:width .7s ease;}
+.bar-val{font-size:9.5px;font-family:'JetBrains Mono',monospace;color:var(--gold);min-width:28px;}
+/* SUCCESS OVERLAY */
+#successOverlay{display:none;position:fixed;inset:0;z-index:300;background:rgba(9,9,9,.96);align-items:center;justify-content:center;flex-direction:column;overflow-y:auto;padding:24px;}
+#successOverlay.show{display:flex;animation:fdi .4s;}
+@keyframes fdi{from{opacity:0}to{opacity:1}}
+.suc-ico{font-size:54px;margin-bottom:14px;}
+.suc-ttl{font-family:'Playfair Display',serif;font-size:30px;color:var(--gold);margin-bottom:8px;}
+.suc-id{font-family:'JetBrains Mono',monospace;font-size:18px;background:var(--dark3);border:1px solid var(--border);padding:9px 22px;border-radius:9px;margin-bottom:12px;}
+.suc-msg{color:var(--muted);font-size:13px;margin-bottom:20px;text-align:center;line-height:1.6;max-width:400px;}
+.suc-btns{display:flex;gap:11px;flex-wrap:wrap;justify-content:center;}
+/* SETTINGS */
+.set-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border2);gap:12px;}
+.set-row:last-child{border-bottom:none;}
+.set-lbl{font-size:12px;font-weight:500;}
+.set-desc{font-size:10px;color:var(--muted);margin-top:1px;}
+.toggle{width:36px;height:20px;border-radius:100px;background:var(--dark5);border:1px solid var(--border);cursor:pointer;position:relative;transition:background .2s;flex-shrink:0;}
+.toggle.on{background:var(--gold);}
+.toggle::after{content:'';position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:transform .2s;}
+.toggle.on::after{transform:translateX(16px);}
+/* TNC */
+.tnc-scroll{background:var(--dark4);border:1px solid var(--border);border-radius:9px;padding:14px;max-height:160px;overflow-y:auto;font-size:11px;color:var(--muted);line-height:1.7;}
+.tnc-h{color:var(--gold);font-weight:600;font-size:10px;letter-spacing:.08em;text-transform:uppercase;margin-top:11px;margin-bottom:4px;}
+.tnc-h:first-child{margin-top:0;}
+.tnc-agree{display:flex;align-items:flex-start;gap:10px;margin-top:12px;}
+.tnc-agree input[type=checkbox]{width:16px;height:16px;min-width:16px;accent-color:var(--gold);cursor:pointer;margin-top:2px;}
+.tnc-agree label{font-size:12px;color:var(--mid);line-height:1.5;cursor:pointer;}
+/* CONFIRM */
+.cfm-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.cfm-box{background:var(--dark4);border:1px solid var(--border);border-radius:11px;padding:16px;}
+.cfm-ttl{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:10px;}
+.cfm-inp{width:100%;background:var(--dark5);border:1px solid rgba(201,168,76,.18);border-radius:8px;padding:11px 13px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;outline:none;transition:border-color .2s;}
+.cfm-inp:focus{border-color:var(--gold);}
+.cfm-inp.err{border-color:var(--red)!important;}
+.cfm-hint{font-size:10px;color:var(--muted);margin-top:8px;line-height:1.5;}
+.tech-af{background:var(--dark5);border:1px solid rgba(201,168,76,.18);border-radius:8px;padding:11px 13px;display:flex;align-items:center;justify-content:space-between;}
+.tech-nm{font-size:14px;font-weight:700;color:var(--gold);}
+.tech-bge{font-size:9px;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.25);color:var(--gold);padding:2px 8px;border-radius:100px;}
+.cfm-ts{font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:7px;}
+/* SUBMIT */
+.submit-area{text-align:center;margin-top:10px;}
+.sub-btn{display:inline-flex;align-items:center;gap:9px;background:linear-gradient(135deg,var(--gold-light),var(--gold));color:var(--black);font-weight:700;font-size:13px;padding:15px 40px;border-radius:9px;border:none;cursor:pointer;letter-spacing:.05em;text-transform:uppercase;transition:transform .2s,box-shadow .2s;font-family:'DM Sans',sans-serif;}
+.sub-btn:hover{transform:translateY(-2px);box-shadow:0 9px 28px rgba(201,168,76,.3);}
+.sub-note{font-size:11px;color:var(--muted);margin-top:9px;}
+/* REV ROW */
+.rev-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border2);font-size:12px;}
+.rev-row:last-child{border-bottom:none;}
+/* TOAST */
+#toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--dark3);border:1px solid var(--gold);color:var(--white);padding:10px 20px;border-radius:9px;font-size:12px;font-weight:600;z-index:9999;transition:transform .3s cubic-bezier(.34,1.56,.64,1),opacity .3s;opacity:0;pointer-events:none;white-space:nowrap;}
+#toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
+#toast.err{border-color:var(--red);color:var(--red);}
+/* DRAWER */
+#drawer{position:fixed;right:0;top:0;bottom:0;width:460px;max-width:95vw;background:var(--dark2);border-left:1px solid var(--border);z-index:200;transform:translateX(100%);transition:transform .3s cubic-bezier(.25,.8,.25,1);overflow-y:auto;display:flex;flex-direction:column;}
+#drawer.open{transform:translateX(0);}
+.dr-hd{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--dark2);position:sticky;top:0;z-index:1;}
+.dr-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:2px 5px;}
+.dr-close:hover{color:var(--white);}
+.dr-body{padding:16px;flex:1;}
+.drow{display:flex;gap:7px;margin-bottom:7px;font-size:12px;}
+.dl{color:var(--muted);font-size:10px;min-width:100px;flex-shrink:0;padding-top:1px;}
+.dv{color:var(--white);font-weight:500;flex:1;word-break:break-word;}
+.d-sec{font-size:9px;font-weight:700;color:var(--gold);letter-spacing:.12em;text-transform:uppercase;margin:13px 0 7px;padding-bottom:4px;border-bottom:1px solid var(--border);}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:190;display:none;}
+.overlay.open{display:block;}
+/* EDIT MODAL */
+#editModal{position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;padding:20px;}
+#editModal.show{display:flex;}
+.em-box{background:var(--dark3);border:1px solid var(--border);border-radius:16px;width:100%;max-width:600px;max-height:88vh;overflow-y:auto;position:relative;}
+.em-box::-webkit-scrollbar{width:3px;}
+.em-box::-webkit-scrollbar-thumb{background:rgba(201,168,76,.2);}
+.em-hd{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--dark3);z-index:1;}
+.em-ttl{font-family:'Playfair Display',serif;font-size:15px;font-weight:700;}
+.em-body{padding:18px;}
+/* STATUS HISTORY */
+.hist-wrap{padding:0;}
+.hist-item{display:flex;gap:11px;padding-bottom:14px;position:relative;}
+.hist-item:last-child{padding-bottom:0;}
+.hist-item:not(:last-child)::before{content:'';position:absolute;left:11px;top:24px;bottom:0;width:1px;background:var(--border);}
+.hist-dot{width:23px;height:23px;border-radius:50%;border:2px solid var(--border);background:var(--dark4);display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;}
+.hist-dot.received{border-color:#3498DB;background:rgba(52,152,219,.12);}
+.hist-dot.diagnosed{border-color:#F39C12;background:rgba(243,156,18,.09);}
+.hist-dot.repairing{border-color:var(--gold);background:rgba(201,168,76,.09);}
+.hist-dot.ready{border-color:var(--green);background:rgba(46,204,113,.09);}
+.hist-dot.delivered{border-color:#555;background:rgba(255,255,255,.04);}
+.hist-txt{flex:1;padding-top:2px;}
+.hist-status{font-size:12px;font-weight:600;color:var(--white);}
+.hist-meta{font-size:10px;color:var(--muted);margin-top:2px;font-family:'JetBrains Mono',monospace;}
+/* INVOICE SEARCH DROPDOWN */
+.inv-search-wrap{position:relative;max-width:560px;margin-bottom:13px;}
+.inv-dd{position:absolute;top:100%;left:0;right:0;background:var(--dark3);border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;z-index:50;max-height:220px;overflow-y:auto;display:none;}
+.inv-dd.show{display:block;}
+.inv-dd-item{padding:9px 13px;cursor:pointer;border-bottom:1px solid var(--border2);transition:background .15s;}
+.inv-dd-item:last-child{border-bottom:none;}
+.inv-dd-item:hover{background:rgba(201,168,76,.06);}
+.inv-dd-id{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gold);}
+.inv-dd-name{font-size:12px;font-weight:500;margin-top:1px;}
+.inv-dd-dev{font-size:10px;color:var(--muted);}
+/* BULK WA */
+.bulk-wa-bar{background:rgba(37,211,102,.07);border:1px solid rgba(37,211,102,.25);border-radius:10px;padding:13px 16px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+/* DELETE CONFIRM MODAL */
+#deleteModal{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.75);display:none;align-items:center;justify-content:center;padding:24px;}
+#deleteModal.show{display:flex;}
+.dm-box{background:var(--dark3);border:1px solid rgba(231,76,60,.3);border-radius:16px;padding:28px 26px;width:100%;max-width:380px;}
+.dm-icon{font-size:36px;text-align:center;margin-bottom:10px;}
+.dm-ttl{font-family:'Playfair Display',serif;font-size:17px;font-weight:700;color:var(--red);text-align:center;margin-bottom:4px;}
+.dm-sub{font-size:11px;color:var(--muted);text-align:center;margin-bottom:18px;line-height:1.5;}
+.dm-warn{background:rgba(231,76,60,.07);border:1px solid rgba(231,76,60,.2);border-radius:8px;padding:9px 12px;font-size:11px;color:var(--red);margin-bottom:14px;text-align:center;font-weight:600;}
+/* REPAIR LOG */
+.rlog-entry{border-left:3px solid var(--border);border-radius:0 7px 7px 0;padding:7px 11px;margin-bottom:5px;background:var(--dark4);}
+.rlog-status{border-left-color:var(--green);}
+.rlog-diagnosis{border-left-color:#3498DB;}
+.rlog-part{border-left-color:var(--gold);}
+.rlog-financial{border-left-color:#9B59B6;}
+.rlog-created{border-left-color:var(--muted);}
+.rlog-action{font-size:11.5px;font-weight:600;color:var(--white);margin-bottom:2px;}
+.rlog-detail{font-size:10.5px;color:var(--mid);line-height:1.4;margin-bottom:2px;white-space:pre-wrap;}
+.rlog-meta{font-size:9.5px;color:var(--muted);font-family:'JetBrains Mono',monospace;}
+/* PRINT */
+.print-area{display:none;}
+@media print{
+  @page{size:A5;margin:6mm;}
+  body>*:not(.print-area){display:none!important;}
+  .print-area{display:block!important;}
+  .sr{font-family:Arial,sans-serif;max-width:100%;color:#000;font-size:8.5px;}
+  .sr-hdr{display:flex;align-items:stretch;border-bottom:2px solid #C9A84C;margin-bottom:7px;padding-bottom:7px;gap:9px;}
+  .sr-logo{width:40px;height:40px;border-radius:50%;background:#0A0A0A;border:2px solid #C9A84C;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .sr-om{font-size:18px;color:#C9A84C;font-family:serif;font-weight:900;line-height:1;display:block;}
+  .sr-info{flex:1;}
+  .sr-badge{font-size:6px;font-weight:900;letter-spacing:.3em;text-transform:uppercase;color:#C9A84C;background:#fff8e1;border:1px solid #C9A84C;display:inline-block;padding:1px 7px;border-radius:100px;margin-bottom:3px;}
+  .sr-biz{font-size:12px;font-weight:900;color:#000;line-height:1.1;margin-bottom:2px;}
+  .sr-tag{font-size:6.5px;color:#888;letter-spacing:.1em;text-transform:uppercase;}
+  .sr-contact{font-size:7px;color:#555;margin-top:2px;}
+  .sr-meta{text-align:right;display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:2px;}
+  .sr-title{display:inline-block;background:#C9A84C;color:#000;font-size:7.5px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;padding:2px 9px;border-radius:3px;margin-bottom:2px;}
+  .sr-jobid{font-family:monospace;font-size:13px;font-weight:900;color:#C9A84C;}
+  .sr-date{font-size:7px;color:#555;}
+  .sr-war{display:inline-block;background:#e8f5e9;border:1px solid #4CAF50;color:#2E7D32;padding:1px 6px;border-radius:100px;font-size:6.5px;font-weight:700;}
+  .sr-body{display:grid;grid-template-columns:1fr 1fr;gap:0 14px;}
+  .sr-sec{margin-bottom:6px;}
+  .sr-sec-t{font-size:6.5px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:#C9A84C;border-bottom:1px solid #e8d9b0;padding-bottom:2px;margin-bottom:4px;}
+  .sr-f{display:flex;flex-direction:column;gap:0;margin-bottom:3px;}
+  .sr-fl{font-size:6px;color:#999;text-transform:uppercase;letter-spacing:.06em;}
+  .sr-fv{font-size:8px;color:#111;font-weight:600;border-bottom:1px solid #eee;padding-bottom:1px;min-height:11px;}
+  .sr-full{grid-column:1/-1;}
+  .sr-issue{background:#fafafa;border:1px solid #eee;border-left:3px solid #C9A84C;border-radius:3px;padding:4px 7px;font-size:8px;line-height:1.4;color:#222;min-height:26px;margin-bottom:6px;}
+  .sr-notes{background:#f0f7ff;border:1px solid #b3d4f5;border-left:3px solid #3498DB;border-radius:3px;padding:4px 7px;font-size:8px;line-height:1.4;color:#222;min-height:22px;margin-bottom:6px;white-space:pre-wrap;}
+  .sr-pt{width:100%;border-collapse:collapse;margin-bottom:6px;font-size:7.5px;}
+  .sr-pt thead tr{background:#fff8e1;}
+  .sr-pt th{padding:3px 5px;border:1px solid #e8d9b0;text-align:left;font-size:6.5px;text-transform:uppercase;letter-spacing:.06em;color:#C9A84C;}
+  .sr-pt td{padding:3px 5px;border:1px solid #eee;}
+  .sr-chklist{display:grid;grid-template-columns:repeat(5,1fr);gap:2px;margin-bottom:6px;}
+  .sr-chi{display:flex;align-items:center;gap:3px;font-size:6.5px;color:#333;}
+  .sr-chbox{width:8px;height:8px;border:1px solid #999;border-radius:2px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;font-size:6px;}
+  .sr-sigs{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:5px;}
+  .sr-sig{display:flex;flex-direction:column;gap:2px;}
+  .sr-sig-lbl{font-size:6.5px;color:#888;text-transform:uppercase;letter-spacing:.08em;}
+  .sr-sig-val{border:1px solid #ddd;border-radius:3px;padding:5px 8px;min-height:28px;background:#fafafa;}
+  .sr-sig-tech{border-color:#C9A84C!important;background:#fffdf5!important;}
+  .sr-sig-name{font-size:8px;font-weight:700;color:#333;}
+  .sr-sig-tech .sr-sig-name{color:#8B6914;}
+  .sr-sig-ts{font-size:6.5px;color:#888;margin-top:1px;}
+  .sr-sname{border-top:1px solid #ccc;padding-top:2px;font-size:6.5px;color:#666;margin-top:2px;}
+  .sr-tnc{background:#fafafa;border:1px solid #e0d8c8;border-radius:3px;padding:4px 7px;margin-bottom:5px;}
+  .sr-tnc-t{font-size:6.5px;font-weight:700;color:#C9A84C;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px;}
+  .sr-tnc-cols{display:grid;grid-template-columns:1fr 1fr;gap:0 10px;}
+  .sr-tnc-item{font-size:6.5px;color:#555;line-height:1.35;margin-bottom:2px;}
+  .sr-tnc-item strong{color:#333;}
+  .sr-tnc-ok{font-size:6.5px;font-weight:700;color:#2E7D32;border-top:1px solid #e0d8c8;padding-top:2px;margin-top:2px;}
+  .sr-foot{text-align:center;border-top:1px solid #eee;padding-top:4px;font-size:6px;color:#aaa;line-height:1.5;}
+}
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+<!-- LOGIN GATE -->
+<div id="loginGate">
+  <div class="lb">
+    <span class="lb-om">ॐ</span>
+    <span class="lb-brand">OM SAI APPLE SERVICE HUB</span>
+    <span class="lb-sub">All-in-One Management System</span>
+    <label class="lb-label">Username</label>
+    <input class="lb-input" type="text" id="lgUser" placeholder="Enter username" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()">
+    <label class="lb-label" style="margin-top:4px;">Password</label>
+    <div class="lb-wrap">
+      <input class="lb-input" type="password" id="lgPass" placeholder="Enter password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()" style="padding-right:36px;">
+      <button class="lb-eye" id="lgEye" onclick="toggleEye()" type="button">👁</button>
+    </div>
+    <button class="lb-btn" onclick="doLogin()">🔓 Login &amp; Access System</button>
+    <div class="lb-err" id="lgErr"></div>
+    <div class="lb-att" id="lgAtt"></div>
+    <div class="lb-lock" id="lgLock">
+      <div class="lb-lock-t">⛔ Account Locked</div>
+      <div class="lb-lock-c" id="lgTimer">05:00</div>
+      <div style="font-size:10px;color:#555;margin-top:3px;">Too many failed attempts</div>
+    </div>
+    <span class="forgot-link" onclick="openRecovery()">🔑 Forgot credentials? Reset access</span>
+  </div>
+</div>
+
+<!-- RECOVERY MODAL -->
+<div id="recoveryModal">
+  <div class="rm-box">
+    <button class="rm-close" onclick="closeRecovery()">✕</button>
+    <div class="rm-title">🔑 Account Recovery</div>
+    <div class="rm-sub" id="rm_sub_text">Recover your credentials or reset your password securely.</div>
+
+    <!-- Tabs -->
+    <div class="rm-tabs">
+      <div class="rm-tab active" id="rmTab_key" onclick="switchRmTab('key')">🗝 Recovery Key</div>
+      <div class="rm-tab" id="rmTab_email" onclick="switchRmTab('email')">📧 Reset via Email</div>
+    </div>
+
+    <!-- ── TAB: Recovery Key ── -->
+    <div class="rm-tab-panel active" id="rmPanel_key">
+      <!-- Step 1: Enter recovery key -->
+      <div class="rm-step show" id="rm_step1">
+        <label class="lb-label">Master Recovery Key</label>
+        <div class="lb-wrap" style="margin-bottom:10px;">
+          <input class="lb-input" type="password" id="rm_key" placeholder="Enter master recovery key…" style="margin-bottom:0;padding-right:36px;" onkeydown="if(event.key==='Enter')verifyRecovery()">
+          <button class="lb-eye" onclick="toggleRmEye()" type="button" id="rm_eye">👁</button>
+        </div>
+        <div class="rm-q">💡 <strong>Hint:</strong> The recovery key is set by the shop admin. Default key: <strong style="color:var(--gold);font-family:'JetBrains Mono',monospace;">OMSAI@RESET</strong></div>
+        <div class="lb-err" id="rm_err" style="margin-bottom:8px;"></div>
+        <button class="lb-btn" onclick="verifyRecovery()">Verify &amp; Show Credentials</button>
+      </div>
+      <!-- Step 2: Show credentials -->
+      <div class="rm-step" id="rm_step2">
+        <div style="font-size:11px;font-weight:600;color:var(--gold);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;">Staff Login Credentials</div>
+        <div class="rm-creds">
+          <div class="rm-cred-row">
+            <span class="rm-cred-hd">Username</span>
+            <span class="rm-cred-hd">Password</span>
+            <span class="rm-cred-hd">Role</span>
+          </div>
+          <div class="rm-cred-row"><span class="rm-mono">admin</span><span class="rm-mono">OmSai@999</span><span class="rm-role" style="background:rgba(201,168,76,.12);color:var(--gold);border:1px solid rgba(201,168,76,.25);">Admin</span></div>
+          <div class="rm-cred-row"><span class="rm-mono">tech1</span><span class="rm-mono">Tech@1234</span><span class="rm-role" style="background:rgba(52,152,219,.1);color:var(--blue);border:1px solid rgba(52,152,219,.25);">Technician</span></div>
+        </div>
+        <div class="rm-warn">⚠️ Keep these credentials confidential. Do not share with customers.</div>
+        <button class="lb-btn" onclick="fillAndClose()" style="margin-top:12px;">← Back to Login</button>
+      </div>
+    </div>
+
+    <!-- ── TAB: Reset via Email ── -->
+    <div class="rm-tab-panel" id="rmPanel_email">
+
+      <!-- Email Step -->
+      <div class="rm-step show" id="rp_step1">
+        <label class="lb-label">Registered Email Address</label>
+        <div class="otp-row">
+          <input class="lb-input" type="email" id="rp_email" placeholder="Enter your registered email…" style="margin-bottom:0;flex:1;" onkeydown="if(event.key==='Enter')sendOtp()">
+          <button class="otp-send-btn" id="rp_send_btn" onclick="sendOtp()">Send OTP</button>
+        </div>
+        <div class="lb-err" id="rp_err1" style="margin-bottom:8px;"></div>
+        <div class="rm-q" style="margin-top:4px;">📬 <strong>Registered emails:</strong> OTPs are sent to the email linked to your account. Contact the shop owner if your email is not registered.</div>
+      </div>
+
+      <!-- OTP Step -->
+      <div class="rm-step" id="rp_step2">
+        <div style="font-size:12px;color:var(--mid);margin-bottom:12px;line-height:1.5;">An OTP has been sent to <strong id="rp_email_display" style="color:var(--gold);">—</strong>. Enter it below within 5 minutes.</div>
+        <label class="lb-label">Enter OTP</label>
+        <div class="otp-row" style="margin-bottom:10px;">
+          <input class="otp-inp" type="text" id="rp_otp" maxlength="6" placeholder="— — — — — —" oninput="this.value=this.value.replace(/\D/g,'')" onkeydown="if(event.key==='Enter')verifyOtp()">
+        </div>
+        <div class="lb-err" id="rp_err2" style="margin-bottom:8px;"></div>
+        <div style="display:flex;gap:8px;">
+          <button class="lb-btn" onclick="verifyOtp()" style="flex:2;">Verify OTP →</button>
+          <button class="otp-send-btn" id="rp_resend_btn" onclick="resendOtp()" style="flex:1;padding:13px 10px;font-size:10px;">Resend</button>
+        </div>
+        <div style="font-size:10px;color:var(--muted);text-align:center;margin-top:8px;">OTP expires in: <span id="rp_otptimer" style="color:var(--gold);font-family:'JetBrains Mono',monospace;font-weight:700;">05:00</span></div>
+      </div>
+
+      <!-- New Password Step -->
+      <div class="rm-step" id="rp_step3">
+        <div style="font-size:12px;color:var(--mid);margin-bottom:12px;line-height:1.5;">Set a new password for <strong id="rp_user_display" style="color:var(--gold);">—</strong>.</div>
+        <label class="lb-label">New Password</label>
+        <div class="lb-wrap" style="margin-bottom:4px;">
+          <input class="lb-input" type="password" id="rp_pw1" placeholder="Enter new password…" style="margin-bottom:0;padding-right:36px;" oninput="checkPwStrength()" onkeydown="if(event.key==='Enter')document.getElementById('rp_pw2').focus()">
+          <button class="lb-eye" onclick="var i=document.getElementById('rp_pw1');i.type=i.type==='password'?'text':'password';" type="button">👁</button>
+        </div>
+        <div class="pw-strength" id="pw_strength_bar"></div>
+        <div style="font-size:9px;color:var(--muted);margin-bottom:10px;margin-top:3px;" id="pw_strength_lbl"></div>
+        <label class="lb-label">Confirm Password</label>
+        <div class="lb-wrap" style="margin-bottom:10px;">
+          <input class="lb-input" type="password" id="rp_pw2" placeholder="Confirm new password…" style="margin-bottom:0;padding-right:36px;" onkeydown="if(event.key==='Enter')doResetPassword()">
+          <button class="lb-eye" onclick="var i=document.getElementById('rp_pw2');i.type=i.type==='password'?'text':'password';" type="button">👁</button>
+        </div>
+        <div class="lb-err" id="rp_err3" style="margin-bottom:8px;"></div>
+        <button class="lb-btn" onclick="doResetPassword()">✅ Reset Password</button>
+      </div>
+
+      <!-- Success Step -->
+      <div class="rm-step" id="rp_step4">
+        <div class="rm-success">
+          <div class="rm-success-ico">🎉</div>
+          <div class="rm-success-t">Password Reset Successful!</div>
+          <div class="rm-success-s">Your password has been updated.<br>You can now log in with your new password.</div>
+        </div>
+        <button class="lb-btn" onclick="closeRecovery()" style="margin-top:16px;">← Back to Login</button>
+      </div>
+
+    </div><!-- end rmPanel_email -->
+  </div>
+</div>
+
+<!-- APP SHELL -->
+<div class="shell" id="appShell" style="display:none;">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sb-logo">
+      <div class="sb-om">ॐ</div>
+      <div class="sb-brand"><strong>OM SAI SERVICE HUB</strong><span>All-in-One System</span></div>
+    </div>
+    <div class="sb-user">
+      <div class="sb-av" id="sbAv">A</div>
+      <div><div class="sb-un" id="sbUn">—</div><div class="sb-ur" id="sbUr">—</div></div>
+      <button class="sb-lo" onclick="doLogout()" title="Logout">⏏</button>
+    </div>
+    <nav class="sb-nav">
+      <div class="sb-sec">Main</div>
+      <div class="ni on" data-page="dashboard" onclick="nav('dashboard')"><div class="ni-ico">📊</div><div class="ni-lbl">Dashboard</div></div>
+      <div class="ni" data-page="alljobs" onclick="nav('alljobs')"><div class="ni-ico">📋</div><div class="ni-lbl">All Jobs</div><div class="ni-badge" id="nbOverdue" style="background:var(--red);display:none;">!</div></div>
+      <div class="ni" data-page="newjob" onclick="nav('newjob')"><div class="ni-ico">📝</div><div class="ni-lbl">New Job Card</div></div>
+      <div class="ni" data-page="techpanel" onclick="nav('techpanel')"><div class="ni-ico">🔧</div><div class="ni-lbl">Technician Panel</div><div class="ni-badge" id="nbActive">0</div></div>
+      <div class="ni" data-page="invoice" onclick="nav('invoice')"><div class="ni-ico">🧾</div><div class="ni-lbl">Invoice Generator</div></div>
+      <div class="sb-sec">Operations</div>
+      <div class="ni" data-page="analytics" onclick="nav('analytics')"><div class="ni-ico">📈</div><div class="ni-lbl">Analytics</div></div>
+      <div class="ni" data-page="dailysummary" onclick="nav('dailysummary')"><div class="ni-ico">🌙</div><div class="ni-lbl">Daily Summary</div></div>
+      <div class="ni" data-page="customers" onclick="nav('customers')"><div class="ni-ico">👥</div><div class="ni-lbl">Customers</div></div>
+      <div class="ni" data-page="inventory" onclick="nav('inventory')"><div class="ni-ico">🔩</div><div class="ni-lbl">Parts &amp; Inventory</div></div>
+      <div class="ni" data-page="reports" onclick="nav('reports')"><div class="ni-ico">📄</div><div class="ni-lbl">Reports &amp; Export</div></div>
+      <div class="sb-sec">System</div>
+      <div class="ni" data-page="settings" onclick="nav('settings')"><div class="ni-ico">⚙️</div><div class="ni-lbl">Settings</div></div>
+    </nav>
+    <div class="sb-foot"><div class="sb-clk" id="sbClk">--:--:--</div><div id="fbStatus" style="text-align:center;font-size:9px;margin-top:4px;color:var(--muted);">☁ Connecting...</div></div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <div class="tb-ttl" id="tbTtl">Backend <span>Dashboard</span></div>
+      <div class="tb-right">
+        <div class="tb-badge"><div class="pulse"></div><span id="tbDate">—</span></div>
+        <button class="tb-btn" onclick="refreshAll()">↻ Refresh</button>
+        <button class="tb-btn" onclick="doLogout()">⏏ Logout</button>
+      </div>
+    </div>
+
+    <!-- ══════ ALL JOBS ══════ -->
+    <div class="page" id="page-alljobs">
+      <div class="page-hd"><div class="page-ttl">All <span>Jobs</span></div><div class="page-sub">Complete job registry — search, filter and manage all repair orders</div></div>
+      <div id="overdue_alert" style="display:none;background:rgba(231,76,60,.08);border:1px solid rgba(231,76,60,.28);border-radius:10px;padding:12px 16px;margin-bottom:14px;flex-direction:row;align-items:center;gap:10px;">
+        <span style="font-size:18px;">⚠️</span>
+        <div style="flex:1;"><div style="font-size:13px;font-weight:700;color:var(--red);">Overdue / Uncollected Devices</div><div style="font-size:11px;color:var(--muted);margin-top:2px;" id="overdue_msg"></div></div>
+        <button class="btn btn-red btn-sm" onclick="filterOverdue()">View Overdue →</button>
+      </div>
+      <div class="bulk-wa-bar">
+        <div><div style="font-size:13px;font-weight:600;">📲 Bulk WhatsApp Reminders</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">Send pickup reminder to all customers with <strong style="color:var(--green);">Ready</strong> status — one by one via WhatsApp</div></div>
+        <button class="btn btn-green" onclick="bulkWA()">💬 Send to All Ready Jobs</button>
+      </div>
+      <div class="fbar">
+        <input class="sinp" id="aj_search" placeholder="🔍 Search by Job ID, name, phone, device…" oninput="renderAllJobs()">
+        <select class="fsel" id="aj_status" onchange="renderAllJobs()"><option value="">All Statuses</option><option>Received</option><option>Diagnosed</option><option>Repairing</option><option>Ready</option><option>Delivered</option></select>
+        <select class="fsel" id="aj_device" onchange="renderAllJobs()"><option value="">All Devices</option><option>iPhone</option><option>iPad</option><option>MacBook</option><option>iMac</option><option>Apple Watch</option><option>AirPods</option><option>Other Apple Device</option></select>
+        <button class="btn btn-outline btn-sm" onclick="clearAJFilters()">✕ Clear</button>
+      </div>
+      <div id="aj_table"></div>
+    </div>
+
+    <!-- ══════ DAILY SUMMARY ══════ -->
+    <div class="page" id="page-dailysummary">
+      <div class="page-hd"><div class="page-ttl">Daily <span>Summary</span></div><div class="page-sub">End-of-day overview — jobs, revenue and pending items</div></div>
+      <div class="fbar" style="margin-bottom:16px;">
+        <input type="date" class="sinp" id="ds_date" style="max-width:180px;" onchange="renderDailySummary()">
+        <button class="btn btn-outline btn-sm" onclick="document.getElementById('ds_date').value=new Date().toISOString().split('T')[0];renderDailySummary()">Today</button>
+        <button class="btn btn-gold btn-sm" onclick="printDailySummary()">🖨️ Print Summary</button>
+      </div>
+      <div id="ds_content"></div>
+    </div>
+
+    <!-- ══════ DASHBOARD ══════ -->
+    <div class="page on" id="page-dashboard">
+      <div class="page-hd"><div class="page-ttl">Business <span>Dashboard</span></div><div class="page-sub">Real-time overview of all repair operations</div></div>
+      <div class="stats-row" id="dashStats"></div>
+      <div class="qa-grid">
+        <div class="qa" onclick="nav('newjob')"><div class="qa-ico">📝</div><div class="qa-lbl">New Job Card</div></div>
+        <div class="qa" onclick="nav('techpanel')"><div class="qa-ico">🔧</div><div class="qa-lbl">Technician Panel</div></div>
+        <div class="qa" onclick="nav('invoice')"><div class="qa-ico">🧾</div><div class="qa-lbl">Generate Invoice</div></div>
+        <div class="qa" onclick="nav('analytics')"><div class="qa-ico">📈</div><div class="qa-lbl">Analytics</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:16px;">
+        <div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;"><span style="font-family:'Playfair Display',serif;font-size:14px;font-weight:700;">Recent Jobs</span><button class="btn btn-outline btn-sm" onclick="nav('techpanel')">View All →</button></div>
+          <div class="tbl-wrap"><table class="dtbl"><thead><tr><th>Job ID</th><th>Customer</th><th>Device</th><th>Status</th><th>Date</th></tr></thead><tbody id="dashRecent"></tbody></table></div>
+        </div>
+        <div>
+          <div style="font-family:'Playfair Display',serif;font-size:14px;font-weight:700;margin-bottom:10px;">Status Overview</div>
+          <div class="card"><div class="card-body"><div id="dashStatus"></div></div></div>
+          <div class="card" style="margin-top:10px;"><div class="card-body" id="dashRev"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════ NEW JOB CARD ══════ -->
+    <div class="page" id="page-newjob">
+      <div class="page-hd"><div class="page-ttl">New <span>Job Card</span></div><div class="page-sub">Fill in all customer and device details to create a new service record</div></div>
+      <form id="jobForm" novalidate>
+        <div class="card">
+          <div class="card-hd"><div class="card-ico">👤</div><div><div class="card-ttl">Customer Information</div><div class="card-sub2">Fields marked * are mandatory</div></div></div>
+          <div class="card-body">
+            <div class="frow"><div class="field"><label>First Name <span class="req">*</span></label><input type="text" id="j_fn" placeholder="e.g. Rahul"><div class="errmsg" id="e_fn">Required</div></div><div class="field"><label>Last Name <span class="req">*</span></label><input type="text" id="j_ln" placeholder="e.g. Sharma"><div class="errmsg" id="e_ln">Required</div></div></div>
+            <div class="frow"><div class="field"><label>Email <span class="req">*</span></label><input type="email" id="j_em" placeholder="rahul@example.com"><div class="errmsg" id="e_em">Valid email required</div></div><div class="field"><label>Phone <span class="req">*</span></label><div class="ph-wrap"><div class="ph-pre">+91</div><input type="tel" id="j_ph" placeholder="98765 43210" maxlength="10"></div><div class="errmsg" id="e_ph">10-digit number required</div></div></div>
+            <div class="frow"><div class="field"><label>Alternate Phone</label><div class="ph-wrap"><div class="ph-pre">+91</div><input type="tel" id="j_ap" placeholder="Optional" maxlength="10"></div></div><div class="field"><label>Address / Area</label><input type="text" id="j_addr" placeholder="e.g. Borivali West"></div></div>
+            <div class="frow"><div class="field"><label>GST Number</label><input type="text" id="j_gst" placeholder="Optional"></div><div class="field"><label>Referred By / Source</label><select id="j_src"><option value="">Select…</option><option>Walk-in</option><option>Google Search</option><option>Instagram</option><option>Facebook</option><option>Customer Referral</option><option>JustDial</option><option>WhatsApp</option><option>Other</option></select></div></div>
+            <div class="field" style="max-width:200px;"><label>Advance Collected (₹)</label><input type="number" id="j_adv" placeholder="0 if none"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><div class="card-ico">📱</div><div><div class="card-ttl">Device Information</div></div></div>
+          <div class="card-body">
+            <div class="frow r3"><div class="field"><label>Device Type <span class="req">*</span></label><select id="j_dt"><option value="">Select…</option><option>iPhone</option><option>iPad</option><option>MacBook</option><option>iMac</option><option>Mac Pro</option><option>Apple Watch</option><option>AirPods</option><option>iPod</option><option>Other Apple Device</option></select><div class="errmsg" id="e_dt">Please select</div></div><div class="field"><label>Model <span class="req">*</span></label><input type="text" id="j_dm" placeholder="e.g. iPhone 15 Pro Max"><div class="errmsg" id="e_dm">Model required</div></div><div class="field"><label>Serial / IMEI</label><input type="text" id="j_sn" placeholder="Optional"></div></div>
+            <div class="frow r3"><div class="field"><label>Storage</label><select id="j_stor"><option value="">Select…</option><option>64 GB</option><option>128 GB</option><option>256 GB</option><option>512 GB</option><option>1 TB</option><option>N/A</option></select></div><div class="field"><label>Color / Finish</label><input type="text" id="j_col" placeholder="e.g. Midnight Black"></div><div class="field"><label>Passcode</label><input type="text" id="j_pc" placeholder="For diagnostic access"></div></div>
+            <div class="field" style="margin-bottom:12px;"><label>Device Condition</label><div class="chips" style="margin-top:7px;"><div class="chip" onclick="pickChip(this,'Good')">Good</div><div class="chip" onclick="pickChip(this,'Minor Scratches')">Minor Scratches</div><div class="chip" onclick="pickChip(this,'Cracked Screen')">Cracked Screen</div><div class="chip" onclick="pickChip(this,'Water Damage')">Water Damage</div><div class="chip" onclick="pickChip(this,'Bent / Deformed')">Bent / Deformed</div><div class="chip" onclick="pickChip(this,'Previously Repaired')">Previously Repaired</div><div class="chip" onclick="pickChip(this,'Dead / Not Powering On')">Dead / Not Powering On</div></div><input type="hidden" id="j_cond" value="Not specified"></div>
+            <div class="field" style="margin-bottom:12px;"><label>Issue Description <span class="req">*</span></label><textarea id="j_issue" placeholder="Describe the customer's complaint in detail…" style="min-height:90px;"></textarea><div class="errmsg" id="e_issue">Please describe the issue</div></div>
+            <div class="frow"><div class="field"><label>Accessories Submitted</label><input type="text" id="j_acc" placeholder="e.g. Charger, Case, Box"></div><div class="field"><label>Estimated Cost (₹)</label><input type="number" id="j_cost" placeholder="Leave blank if not quoted"></div></div>
+            <div style="font-size:10px;font-weight:700;color:var(--gold);letter-spacing:.1em;text-transform:uppercase;margin:14px 0 8px;padding-bottom:5px;border-bottom:1px solid var(--border);">Physical Device Checklist at Submission</div>
+            <div class="chklist" id="j_chklist">
+              <div class="chk" data-key="Screen Intact"><span class="chk-lbl">Screen Intact</span><div class="chk-btns"><button type="button" class="chk-btn" onclick="chk(this,'ok')">✓ OK</button><button type="button" class="chk-btn" onclick="chk(this,'na')">NA</button></div></div>
+              <div class="chk" data-key="Back Glass"><span class="chk-lbl">Back Glass</span><div class="chk-btns"><button type="button" class="chk-btn" onclick="chk(this,'ok')">✓ OK</button><button type="button" class="chk-btn" onclick="chk(this,'na')">NA</button></div></div>
+              <div class="chk" data-key="All Buttons"><span class="chk-lbl">All Buttons</span><div class="chk-btns"><button type="button" class="chk-btn" onclick="chk(this,'ok')">✓ OK</button><button type="button" class="chk-btn" onclick="chk(this,'na')">NA</button></div></div>
+              <div class="chk" data-key="Camera"><span class="chk-lbl">Camera</span><div class="chk-btns"><button type="button" class="chk-btn" onclick="chk(this,'ok')">✓ OK</button><button type="button" class="chk-btn" onclick="chk(this,'na')">NA</button></div></div>
+              <div class="chk" data-key="Charging Port"><span class="chk-lbl">Charging Port</span><div class="chk-btns"><button type="button" class="chk-btn" onclick="chk(this,'ok')">✓ OK</button><button type="button" class="chk-btn" onclick="chk(this,'na')">NA</button></div></div>
+              <div class="chk" data-key="Speaker / Mic"><span class="chk-lbl">Speaker / Mic</span><div class="chk-btns"><button type="button" class="chk-btn" onclick="chk(this,'ok')">✓ OK</button><button type="button" class="chk-btn" onclick="chk(this,'na')">NA</button></div></div>
+              <div class="chk" data-key="SIM Card Removed"><span class="chk-lbl">SIM Removed</span><div class="chk-btns"><button type="button" class="chk-btn" onclick="chk(this,'ok')">✓ OK</button><button type="button" class="chk-btn" onclick="chk(this,'na')">NA</button></div></div>
+              <div class="chk" data-key="Face ID / Touch ID"><span class="chk-lbl">Face/Touch ID</span><div class="chk-btns"><button type="button" class="chk-btn" onclick="chk(this,'ok')">✓ OK</button><button type="button" class="chk-btn" onclick="chk(this,'na')">NA</button></div></div>
+              <div class="chk" data-key="WiFi / Bluetooth"><span class="chk-lbl">WiFi / BT</span><div class="chk-btns"><button type="button" class="chk-btn" onclick="chk(this,'ok')">✓ OK</button><button type="button" class="chk-btn" onclick="chk(this,'na')">NA</button></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><div class="card-ico">🔧</div><div><div class="card-ttl">Technician &amp; Warranty</div></div></div>
+          <div class="card-body">
+            <div class="frow"><div class="field"><label>Assigned Technician</label><input type="text" id="j_tech" value="Vinayak" oninput="document.getElementById('j_techDisp').textContent=this.value.trim()||'Vinayak'"></div><div class="field"><label>Warranty on Repair</label><select id="j_war"><option value="">Select warranty…</option><option>No Warranty</option><option>7 Days</option><option>15 Days</option><option>30 Days</option><option>60 Days</option><option>90 Days</option><option>6 Months</option><option>1 Year</option></select></div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><div class="card-ico">✅</div><div><div class="card-ttl">Customer Declaration</div><div class="card-sub2">Customer types name to confirm — acts as digital signature</div></div></div>
+          <div class="card-body">
+            <div class="cfm-grid">
+              <div class="cfm-box">
+                <div class="cfm-ttl">👤 Customer Signature</div>
+                <input class="cfm-inp" type="text" id="j_custName" placeholder="Customer types full name here…" oninput="this.classList.remove('err');document.getElementById('e_custName').classList.remove('show')">
+                <div class="errmsg" id="e_custName" style="margin-top:5px;">Customer must type their name to confirm</div>
+                <div class="cfm-hint">By typing their name, the customer confirms all device details are accurate and agrees to all Terms &amp; Conditions.</div>
+                <div class="cfm-ts" id="j_custTs">Timestamp will appear on submission</div>
+              </div>
+              <div class="cfm-box">
+                <div class="cfm-ttl">🔧 Technician Assigned</div>
+                <div class="tech-af"><div><div style="font-size:9px;color:var(--muted);margin-bottom:3px;text-transform:uppercase;letter-spacing:.07em;">Assigned To</div><div class="tech-nm" id="j_techDisp">Vinayak</div></div><div class="tech-bge">Auto-assigned</div></div>
+                <div class="cfm-hint">Update the technician name in the section above if needed.</div>
+                <div class="cfm-ts" id="j_techTs">Job timestamp will appear on submission</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><div class="card-ico">📄</div><div><div class="card-ttl">Terms &amp; Conditions</div></div></div>
+          <div class="card-body">
+            <div class="tnc-scroll">
+              <div class="tnc-h">🛡️ WARRANTY</div>Limited warranty on parts and labour covering manufacturing defects and installation errors only. Accidental, liquid, and software damage not covered. Tampering voids warranty.
+              <div class="tnc-h">💾 DATA</div>Data loss may occur. Customer must back up before submission. OM SAI Apple Service Hub is not liable.
+              <div class="tnc-h">🔧 REPAIR</div>Estimates are approximate. Additional costs need customer approval.
+              <div class="tnc-h">💳 PAYMENT</div>Full payment on completion. No refunds on completed services or installed parts.
+              <div class="tnc-h">📦 UNCOLLECTED</div>Devices not collected within 30 days may be disposed of with prior written notice.
+            </div>
+            <div class="tnc-agree"><input type="checkbox" id="j_tnc"><label for="j_tnc">I have read and agree to all <strong style="color:var(--gold);">Terms &amp; Conditions</strong>. All device information is accurate. <span class="req">*</span></label></div>
+            <div class="errmsg" id="e_tnc" style="margin-top:6px;">You must agree to the Terms &amp; Conditions to proceed</div>
+          </div>
+        </div>
+        <div class="submit-area"><button type="submit" class="sub-btn">⚡ Generate Service Report &amp; Save Job</button><div class="sub-note">Job will be saved to the system and a printable 1-page Service Report will be ready</div></div>
+      </form>
+    </div>
+
+    <!-- ══════ TECHNICIAN PANEL ══════ -->
+    <div class="page" id="page-techpanel" style="padding:0;overflow:hidden;">
+      <div class="tp-wrap">
+        <div class="tp-list">
+          <div class="tp-list-hd">
+            <div class="tp-list-title">🔧 Job Queue</div>
+            <input class="sinp" id="tp_search" placeholder="🔍 Search jobs…" oninput="renderTPList()" style="margin-bottom:6px;font-size:11px;">
+            <select class="fsel" id="tp_filter" onchange="renderTPList()" style="width:100%;font-size:10px;">
+              <option value="">All Statuses</option><option value="Received">Received</option><option value="Diagnosed">Diagnosed</option><option value="Repairing">Repairing</option><option value="Ready">Ready</option><option value="Delivered">Delivered</option>
+            </select>
+          </div>
+          <div class="tp-jobs" id="tp_jobs"></div>
+        </div>
+        <div class="tp-detail" id="tp_detail">
+          <div class="tp-no"><div class="tp-no-ico">🔧</div><div style="font-family:'Playfair Display',serif;font-size:18px;color:var(--gold);opacity:.4;">Select a Job</div><div style="font-size:12px;margin-top:4px;">Pick a job from the list on the left to view and update repair details</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════ INVOICE GENERATOR ══════ -->
+    <div class="page" id="page-invoice">
+      <div class="page-hd"><div class="page-ttl">Invoice <span>Generator</span></div><div class="page-sub">Search by Job ID, customer name or phone number</div></div>
+      <div class="inv-search-wrap">
+        <div class="fbar" style="margin-bottom:0;">
+          <input class="sinp" id="inv_input" placeholder="🔍 Search by Job ID, name or phone…" oninput="invSearch()" onkeydown="if(event.key==='Enter'){closeInvDD();genInvoice();}" onfocus="invSearch()" style="font-family:'DM Sans',sans-serif;">
+          <button class="btn btn-gold" onclick="closeInvDD();genInvoice()">Generate →</button>
+          <button class="btn btn-outline" onclick="clearInvoice()">Clear</button>
+        </div>
+        <div class="inv-dd" id="inv_dd"></div>
+      </div>
+      <div id="inv_out"><div class="card" style="text-align:center;padding:48px 24px;"><div style="font-size:44px;opacity:.2;margin-bottom:12px;">🧾</div><div style="font-size:13px;color:var(--muted);">Search by Job ID, customer name or phone number above.</div></div></div>
+    </div>
+
+    <!-- ══════ ANALYTICS ══════ -->
+    <div class="page" id="page-analytics">
+      <div class="page-hd"><div class="page-ttl">Business <span>Analytics</span></div><div class="page-sub">Revenue, device trends and performance insights</div></div>
+      <div class="stats-row" id="an_stats"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;" id="an_charts"></div>
+    </div>
+
+    <!-- ══════ CUSTOMERS ══════ -->
+    <div class="page" id="page-customers">
+      <div class="page-hd"><div class="page-ttl">Customer <span>Records</span></div><div class="page-sub">Lookup customers and view full repair history</div></div>
+      <div class="fbar"><input class="sinp" id="cu_search" placeholder="🔍 Search by name or phone…" oninput="renderCustomers()"></div>
+      <div id="cu_list"></div>
+    </div>
+
+    <!-- ══════ INVENTORY ══════ -->
+    <div class="page" id="page-inventory">
+      <div class="page-hd"><div class="page-ttl">Parts &amp; <span>Inventory</span></div><div class="page-sub">Parts usage aggregated from all job records</div></div>
+      <div id="inv_content"></div>
+    </div>
+
+    <!-- ══════ REPORTS ══════ -->
+    <div class="page" id="page-reports">
+      <div class="page-hd"><div class="page-ttl">Reports &amp; <span>Export</span></div><div class="page-sub">Download business reports and export data</div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;" id="rpt_grid"></div>
+    </div>
+
+    <!-- ══════ SETTINGS ══════ -->
+    <div class="page" id="page-settings">
+      <div class="page-hd"><div class="page-ttl">System <span>Settings</span></div><div class="page-sub">Store information, staff accounts and data management</div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div>
+          <div class="card"><div class="card-hd"><div class="card-ico">🏪</div><div><div class="card-ttl">Store Information</div></div></div><div class="card-body">
+            <div class="set-row"><div><div class="set-lbl">Business Name</div><div class="set-desc">OM SAI Apple Service Hub</div></div></div>
+            <div class="set-row"><div><div class="set-lbl">Phone</div><div class="set-desc">+91-7208325405</div></div></div>
+            <div class="set-row"><div><div class="set-lbl">Address</div><div class="set-desc">Dattapada Road, Borivali (E), Mumbai – 400066</div></div></div>
+            <div class="set-row"><div><div class="set-lbl">Hours</div><div class="set-desc">Mon–Sun: 9:00 AM – 11:00 PM</div></div></div>
+          </div></div>
+          <div class="card"><div class="card-hd"><div class="card-ico">👤</div><div><div class="card-ttl">Staff Accounts</div></div></div><div class="card-body">
+            <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:10px;padding-bottom:7px;border-bottom:1px solid var(--border2);font-size:9px;font-weight:700;color:var(--gold);letter-spacing:.08em;text-transform:uppercase;"><span>Username</span><span>Role</span><span>Status</span></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:10px;padding:7px 0;border-bottom:1px solid var(--border2);align-items:center;font-size:12px;"><span class="mono">admin</span><span><span class="badge" style="background:rgba(201,168,76,.12);color:var(--gold);border:1px solid rgba(201,168,76,.25);">Admin</span></span><span class="badge" style="background:rgba(46,204,113,.1);color:var(--green);border:1px solid rgba(46,204,113,.2);">Active</span></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:10px;padding:7px 0;align-items:center;font-size:12px;"><span class="mono">tech1</span><span><span class="badge" style="background:rgba(52,152,219,.1);color:var(--blue);border:1px solid rgba(52,152,219,.2);">Technician</span></span><span class="badge" style="background:rgba(46,204,113,.1);color:var(--green);border:1px solid rgba(46,204,113,.2);">Active</span></div>
+          </div></div>
+        </div>
+        <div>
+          <div class="card"><div class="card-hd"><div class="card-ico">🗃️</div><div><div class="card-ttl">Data Management</div></div></div><div class="card-body">
+            <div class="set-row"><div><div class="set-lbl">Total Job Records</div></div><span id="set_total" style="font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;color:var(--gold);">—</span></div>
+            <div class="set-row"><div><div class="set-lbl">Storage Used</div><div class="set-desc">Browser LocalStorage</div></div><span id="set_size" style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--mid);">—</span></div>
+            <div class="set-row"><div><div class="set-lbl">Export All Data</div><div class="set-desc">Download full backup as JSON</div></div><button class="btn btn-outline btn-sm" onclick="exportData()">⬇ Export</button></div>
+            <div class="set-row"><div><div class="set-lbl" style="color:var(--red);">Clear All Data</div><div class="set-desc">Permanently delete all records</div></div><button class="btn btn-red btn-sm" onclick="clearAll()">⚠ Delete All</button></div>
+          </div></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end .main -->
+</div><!-- end .shell -->
+
+<!-- SUCCESS OVERLAY -->
+<div id="successOverlay">
+  <div class="suc-ico">✅</div>
+  <div class="suc-ttl">Job Card Created!</div>
+  <div class="suc-id" id="suc_id">OM-2026-XXXX</div>
+  <div class="suc-msg" id="suc_msg"></div>
+  <div class="suc-btns">
+    <button class="btn btn-gold" onclick="doPrint()">🖨️ Print Service Report</button>
+    <button class="btn" style="background:#25D366;color:#fff;border:none;" onclick="doWA()">💬 WhatsApp Customer</button>
+    <button class="btn btn-outline" onclick="nav('techpanel');document.getElementById('successOverlay').classList.remove('show')">🔧 Open Tech Panel</button>
+    <button class="btn btn-outline" onclick="newJob()">+ New Job</button>
+  </div>
+</div>
+
+<!-- EDIT JOB MODAL -->
+<div id="editModal">
+  <div class="em-box">
+    <div class="em-hd">
+      <div class="em-ttl">✏️ Edit Job — <span id="em_jobid" style="color:var(--gold);font-family:'JetBrains Mono',monospace;font-size:13px;"></span></div>
+      <button class="dr-close" onclick="closeEdit()">✕</button>
+    </div>
+    <div class="em-body">
+      <div style="font-size:10px;font-weight:700;color:var(--gold);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;">Customer Details</div>
+      <div class="frow"><div class="field"><label>First Name</label><input type="text" id="em_fn" class="pts-inp" style="border-radius:8px;width:100%;"></div><div class="field"><label>Last Name</label><input type="text" id="em_ln" class="pts-inp" style="border-radius:8px;width:100%;"></div></div>
+      <div class="frow"><div class="field"><label>Email</label><input type="email" id="em_em" class="pts-inp" style="border-radius:8px;width:100%;"></div><div class="field"><label>Phone</label><input type="tel" id="em_ph" class="pts-inp" style="border-radius:8px;width:100%;" maxlength="10"></div></div>
+      <div class="frow"><div class="field"><label>Alt Phone</label><input type="tel" id="em_ap" class="pts-inp" style="border-radius:8px;width:100%;" maxlength="10"></div><div class="field"><label>Address</label><input type="text" id="em_addr" class="pts-inp" style="border-radius:8px;width:100%;"></div></div>
+      <div class="frow r1"><div class="field"><label>GST Number</label><input type="text" id="em_gst" class="pts-inp" style="border-radius:8px;width:100%;max-width:300px;" placeholder="e.g. 27AABCU9603R1ZX"></div></div>
+      <div style="font-size:10px;font-weight:700;color:var(--gold);letter-spacing:.1em;text-transform:uppercase;margin:14px 0 10px;">Device Details</div>
+      <div class="frow r3"><div class="field"><label>Device Type</label><select id="em_dt" class="pts-inp" style="border-radius:8px;width:100%;appearance:none;"><option>iPhone</option><option>iPad</option><option>MacBook</option><option>iMac</option><option>Mac Pro</option><option>Apple Watch</option><option>AirPods</option><option>iPod</option><option>Other Apple Device</option></select></div><div class="field"><label>Model</label><input type="text" id="em_dm" class="pts-inp" style="border-radius:8px;width:100%;"></div><div class="field"><label>Serial / IMEI</label><input type="text" id="em_sn" class="pts-inp" style="border-radius:8px;width:100%;"></div></div>
+      <div class="frow r3"><div class="field"><label>Color</label><input type="text" id="em_col" class="pts-inp" style="border-radius:8px;width:100%;"></div><div class="field"><label>Passcode</label><input type="text" id="em_pc" class="pts-inp" style="border-radius:8px;width:100%;"></div><div class="field"><label>Accessories</label><input type="text" id="em_acc" class="pts-inp" style="border-radius:8px;width:100%;"></div></div>
+      <div class="field" style="margin-bottom:13px;"><label>Issue / Complaint</label><textarea id="em_issue" class="pts-inp" style="border-radius:8px;width:100%;min-height:70px;resize:vertical;"></textarea></div>
+      <div class="frow"><div class="field"><label>Warranty</label><select id="em_war" class="pts-inp" style="border-radius:8px;width:100%;appearance:none;"><option value="">Select…</option><option>No Warranty</option><option>7 Days</option><option>15 Days</option><option>30 Days</option><option>60 Days</option><option>90 Days</option><option>6 Months</option><option>1 Year</option></select></div><div class="field"><label>Technician</label><input type="text" id="em_tech" class="pts-inp" style="border-radius:8px;width:100%;"></div></div>
+      <div style="display:flex;gap:10px;margin-top:6px;justify-content:flex-end;">
+        <button class="btn btn-outline" onclick="closeEdit()">Cancel</button>
+        <button class="btn btn-gold" onclick="saveEdit()">✅ Save Changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE CONFIRM MODAL -->
+<div id="deleteModal">
+  <div class="dm-box">
+    <div class="dm-icon">🗑️</div>
+    <div class="dm-ttl">Delete Job</div>
+    <div class="dm-sub">This action is <strong>permanent and cannot be undone</strong>.<br>Verify your identity to proceed.</div>
+    <div class="dm-warn" id="dm_joblbl">Job: —</div>
+    <label class="lb-label">Technician Username</label>
+    <input class="lb-input" type="text" id="dm_user" placeholder="Enter technician username" style="margin-bottom:10px;" onkeydown="if(event.key==='Enter')confirmDelete()">
+    <label class="lb-label">Technician Password</label>
+    <div class="lb-wrap" style="margin-bottom:6px;">
+      <input class="lb-input" type="password" id="dm_pass" placeholder="Enter technician password" style="margin-bottom:0;padding-right:36px;" onkeydown="if(event.key==='Enter')confirmDelete()">
+      <button class="lb-eye" onclick="var i=document.getElementById('dm_pass');i.type=i.type==='password'?'text':'password';" type="button">👁</button>
+    </div>
+    <div class="lb-err" id="dm_err" style="margin-bottom:10px;"></div>
+    <div style="display:flex;gap:9px;margin-top:4px;">
+      <button class="btn btn-outline" style="flex:1;" onclick="closeDeleteModal()">Cancel</button>
+      <button class="btn btn-red" style="flex:1;" onclick="confirmDelete()">🗑️ Delete Permanently</button>
+    </div>
+  </div>
+</div>
+
+<!-- DRAWER -->
+<div class="overlay" id="overlay" onclick="closeDr()"></div>
+<div id="drawer">
+  <div class="dr-hd">
+    <div><div class="mono" id="dr_id">—</div><div style="font-size:11px;color:var(--muted);margin-top:2px;" id="dr_date">—</div></div>
+    <button class="dr-close" onclick="closeDr()">✕</button>
+  </div>
+  <div class="dr-body" id="dr_body"></div>
+</div>
+
+<!-- PRINT AREA -->
+<div class="print-area" id="printArea"></div>
+<div id="toast"></div>
+<script>
+var STORE='omSaiJobs',AUTH='omSaiStaffAuth',LK='omSaiLockout';
+var USERS=[
+  {u:'admin', p:'OmSai@999',  r:'Admin',      e:'admin@omsaiservice.com'},
+  {u:'tech1', p:'Tech@1234',  r:'Technician', e:'tech1@omsaiservice.com'}
+];
+var me=null,_job={},selJobId=null;
+var STATUSES=['Received','Diagnosed','Repairing','Ready','Delivered'];
+var TITLES={dashboard:'Backend <span>Dashboard</span>',alljobs:'All <span>Jobs</span>',newjob:'New <span>Job Card</span>',techpanel:'Technician <span>Panel</span>',invoice:'Invoice <span>Generator</span>',analytics:'Business <span>Analytics</span>',dailysummary:'Daily <span>Summary</span>',customers:'Customer <span>Records</span>',inventory:'Parts &amp; <span>Inventory</span>',reports:'Reports &amp; <span>Export</span>',settings:'System <span>Settings</span>'};
+
+/* ── RESET PASSWORD STATE ── */
+var _rp={otp:null,user:null,timer:null,expiry:0};
+
+/* ── AUTH ── */
+function chkLock(){var l=JSON.parse(localStorage.getItem(LK)||'null');if(!l)return false;var r=l.until-Date.now();if(r<=0){localStorage.removeItem(LK);return false;}showLock(r);return true;}
+function showLock(ms){
+  var lb=document.getElementById('lgLock'),btn=document.querySelector('.lb-btn');
+  lb.classList.add('show');if(btn)btn.disabled=true;
+  var iv=setInterval(function(){ms-=1000;if(ms<=0){clearInterval(iv);localStorage.removeItem(LK);lb.classList.remove('show');document.getElementById('lgTimer').textContent='05:00';if(btn)btn.disabled=false;return;}var m=Math.floor(ms/60000),s=Math.floor((ms%60000)/1000);document.getElementById('lgTimer').textContent=(m<10?'0':'')+m+':'+(s<10?'0':'')+s;},1000);
+  var m0=Math.floor(ms/60000),s0=Math.floor((ms%60000)/1000);document.getElementById('lgTimer').textContent=(m0<10?'0':'')+m0+':'+(s0<10?'0':'')+s0;
+}
+function doLogin(){
+  if(chkLock())return;
+  var u=(document.getElementById('lgUser').value||'').trim().toLowerCase();
+  var p=(document.getElementById('lgPass').value||'').trim();
+  var err=document.getElementById('lgErr'),att=document.getElementById('lgAtt');
+  if(!u||!p){err.textContent='Please enter both fields.';err.classList.add('show');return;}
+  var m=USERS.find(function(x){return x.u===u&&x.p===p;});
+  if(m){
+    sessionStorage.setItem(AUTH,JSON.stringify({u:m.u,r:m.r,t:Date.now()}));
+    localStorage.removeItem(LK);localStorage.removeItem('omSaiAttempts');
+    document.getElementById('loginGate').classList.add('h');
+    onAuth(m);
+  } else {
+    var at=parseInt(localStorage.getItem('omSaiAttempts')||'0')+1;
+    localStorage.setItem('omSaiAttempts',at);
+    ['lgUser','lgPass'].forEach(function(id){var el=document.getElementById(id);el.classList.add('err');setTimeout(function(){el.classList.remove('err');},600);});
+    err.classList.add('show');
+    var rem=5-at;
+    if(rem<=0){localStorage.removeItem('omSaiAttempts');localStorage.setItem(LK,JSON.stringify({until:Date.now()+5*60000}));showLock(5*60000);err.classList.remove('show');}
+    else{err.textContent='Incorrect credentials. '+rem+' attempt'+(rem===1?'':'s')+' remaining.';}
+  }
+}
+function toggleEye(){var i=document.getElementById('lgPass'),b=document.getElementById('lgEye');i.type=i.type==='password'?'text':'password';b.textContent=i.type==='password'?'👁':'🙈';}
+function toggleRmEye(){var i=document.getElementById('rm_key'),b=document.getElementById('rm_eye');i.type=i.type==='password'?'text':'password';b.textContent=i.type==='password'?'👁':'🙈';}
+function openRecovery(){
+  document.getElementById('rm_key').value='';
+  document.getElementById('rm_err').classList.remove('show');
+  document.getElementById('rm_step1').classList.add('show');
+  document.getElementById('rm_step2').classList.remove('show');
+  // Reset email tab
+  switchRmTab('key');
+  rpShowStep(1);
+  document.getElementById('rp_email').value='';
+  document.getElementById('rp_otp').value='';
+  document.getElementById('rp_err1').classList.remove('show');
+  document.getElementById('rp_err2').classList.remove('show');
+  document.getElementById('rp_err3').classList.remove('show');
+  document.getElementById('pw_strength_bar').className='pw-strength';
+  document.getElementById('pw_strength_lbl').textContent='';
+  if(_rp.timer)clearInterval(_rp.timer);
+  document.getElementById('recoveryModal').classList.add('show');
+  setTimeout(function(){document.getElementById('rm_key').focus();},100);
+}
+function closeRecovery(){
+  document.getElementById('recoveryModal').classList.remove('show');
+  document.getElementById('rm_key').value='';
+  document.getElementById('rm_step1').classList.add('show');
+  document.getElementById('rm_step2').classList.remove('show');
+  if(_rp.timer)clearInterval(_rp.timer);
+  _rp={otp:null,user:null,timer:null,expiry:0};
+}
+function verifyRecovery(){
+  var key=(document.getElementById('rm_key').value||'').trim();
+  var err=document.getElementById('rm_err');
+  if(!key){err.textContent='Please enter the recovery key.';err.classList.add('show');return;}
+  // Master recovery key — change this to your own secret
+  if(key==='OMSAI@RESET'){
+    document.getElementById('rm_step1').classList.remove('show');
+    document.getElementById('rm_step2').classList.add('show');
+    err.classList.remove('show');
+  } else {
+    document.getElementById('rm_key').classList.add('err');
+    setTimeout(function(){document.getElementById('rm_key').classList.remove('err');},600);
+    err.textContent='Incorrect recovery key. Contact the shop owner.';
+    err.classList.add('show');
+  }
+}
+function fillAndClose(){
+  closeRecovery();
+  document.getElementById('lgUser').focus();
+}
+
+/* ── RECOVERY TAB SWITCH ── */
+function switchRmTab(tab){
+  ['key','email'].forEach(function(t){
+    document.getElementById('rmTab_'+t).classList.toggle('active',t===tab);
+    document.getElementById('rmPanel_'+t).classList.toggle('active',t===tab);
+  });
+}
+
+/* ── RESET PASSWORD VIA EMAIL ── */
+function rpShowStep(n){
+  [1,2,3,4].forEach(function(i){
+    var el=document.getElementById('rp_step'+i);
+    if(el)el.classList.toggle('show',i===n);
+  });
+}
+function sendOtp(){
+  var email=(document.getElementById('rp_email').value||'').trim().toLowerCase();
+  var err=document.getElementById('rp_err1');
+  err.classList.remove('show');
+  if(!email){err.textContent='Please enter your email address.';err.classList.add('show');return;}
+  var user=USERS.find(function(x){return x.e===email;});
+  if(!user){
+    document.getElementById('rp_email').classList.add('err');
+    setTimeout(function(){document.getElementById('rp_email').classList.remove('err');},600);
+    err.textContent='No account found with this email address.';err.classList.add('show');return;
+  }
+  _rp.user=user;
+  _rp.otp=String(Math.floor(100000+Math.random()*900000));
+  _rp.expiry=Date.now()+5*60000;
+  // Show OTP in a toast (in real deployment this would be emailed)
+  console.log('[OTP for '+user.u+']: '+_rp.otp);
+  toast('OTP sent! For demo: '+_rp.otp,false);
+  document.getElementById('rp_email_display').textContent=email;
+  rpShowStep(2);
+  startOtpTimer();
+  setTimeout(function(){document.getElementById('rp_otp').focus();},100);
+}
+function startOtpTimer(){
+  if(_rp.timer)clearInterval(_rp.timer);
+  _rp.timer=setInterval(function(){
+    var rem=_rp.expiry-Date.now();
+    var el=document.getElementById('rp_otptimer');
+    if(!el){clearInterval(_rp.timer);return;}
+    if(rem<=0){clearInterval(_rp.timer);if(el)el.textContent='00:00';return;}
+    var m=Math.floor(rem/60000),s=Math.floor((rem%60000)/1000);
+    el.textContent=(m<10?'0':'')+m+':'+(s<10?'0':'')+s;
+  },1000);
+}
+function verifyOtp(){
+  var entered=(document.getElementById('rp_otp').value||'').trim();
+  var err=document.getElementById('rp_err2');
+  err.classList.remove('show');
+  if(!entered){err.textContent='Please enter the OTP.';err.classList.add('show');return;}
+  if(Date.now()>_rp.expiry){err.textContent='OTP has expired. Please request a new one.';err.classList.add('show');return;}
+  if(entered!==_rp.otp){
+    document.getElementById('rp_otp').classList.add('err');
+    setTimeout(function(){document.getElementById('rp_otp').classList.remove('err');},600);
+    err.textContent='Incorrect OTP. Please try again.';err.classList.add('show');return;
+  }
+  clearInterval(_rp.timer);
+  document.getElementById('rp_user_display').textContent=_rp.user.u+' ('+_rp.user.r+')';
+  rpShowStep(3);
+  setTimeout(function(){document.getElementById('rp_pw1').focus();},100);
+}
+function resendOtp(){
+  _rp.otp=String(Math.floor(100000+Math.random()*900000));
+  _rp.expiry=Date.now()+5*60000;
+  console.log('[OTP resend for '+_rp.user.u+']: '+_rp.otp);
+  toast('New OTP sent! For demo: '+_rp.otp,false);
+  document.getElementById('rp_err2').classList.remove('show');
+  startOtpTimer();
+}
+function checkPwStrength(){
+  var pw=document.getElementById('rp_pw1').value||'';
+  var bar=document.getElementById('pw_strength_bar'),lbl=document.getElementById('pw_strength_lbl');
+  bar.className='pw-strength';
+  if(!pw){lbl.textContent='';return;}
+  var score=0;
+  if(pw.length>=8)score++;if(/[A-Z]/.test(pw))score++;if(/[0-9]/.test(pw))score++;if(/[^A-Za-z0-9]/.test(pw))score++;
+  if(score<=1){bar.classList.add('pw-str-weak');lbl.textContent='Weak — add uppercase, numbers & symbols';}
+  else if(score<=2){bar.classList.add('pw-str-med');lbl.textContent='Medium — getting stronger!';}
+  else{bar.classList.add('pw-str-strong');lbl.textContent='Strong password ✓';}
+}
+function doResetPassword(){
+  var pw1=(document.getElementById('rp_pw1').value||'').trim();
+  var pw2=(document.getElementById('rp_pw2').value||'').trim();
+  var err=document.getElementById('rp_err3');
+  err.classList.remove('show');
+  if(!pw1){err.textContent='Please enter a new password.';err.classList.add('show');return;}
+  if(pw1.length<6){err.textContent='Password must be at least 6 characters.';err.classList.add('show');return;}
+  if(pw1!==pw2){
+    document.getElementById('rp_pw2').classList.add('err');
+    setTimeout(function(){document.getElementById('rp_pw2').classList.remove('err');},600);
+    err.textContent='Passwords do not match.';err.classList.add('show');return;
+  }
+  // Update the password in USERS array
+  var idx=USERS.findIndex(function(x){return x.u===_rp.user.u;});
+  if(idx>=0)USERS[idx].p=pw1;
+  _rp.user=null;_rp.otp=null;
+  rpShowStep(4);
+  toast('Password reset successfully!',false);
+}
+function doLogout(){sessionStorage.removeItem(AUTH);document.getElementById('appShell').style.display='none';document.getElementById('loginGate').classList.remove('h');document.getElementById('lgUser').value='';document.getElementById('lgPass').value='';me=null;}
+function onAuth(u){me=u;document.getElementById('sbAv').textContent=u.u.charAt(0).toUpperCase();document.getElementById('sbUn').textContent=u.u;document.getElementById('sbUr').textContent=u.r;document.getElementById('appShell').style.display='flex';startClock();refreshAll();}
+(function init(){var s=JSON.parse(sessionStorage.getItem(AUTH)||'null');if(chkLock())return;if(s&&(Date.now()-s.t)<28800000){onAuth(s);}else{setTimeout(function(){var el=document.getElementById('lgUser');if(el)el.focus();},200);}})();
+
+/* ── DATA ── */
+function loadJobs(){try{return JSON.parse(localStorage.getItem(STORE))||[];}catch(e){return[];}}
+function saveJobs(j){
+  localStorage.setItem(STORE,JSON.stringify(j));
+  // Sync each job to Firebase (only new/updated — compare by jobId)
+  if(window._fb){
+    j.forEach(function(job){window._fb.saveJob(job);});
+  }
+}
+function esc(s){if(s==null)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function stcls(s){var m={received:'st-received',diagnosed:'st-diagnosed',repairing:'st-repairing',ready:'st-ready',delivered:'st-delivered'};return m[(s||'').toLowerCase()]||'st-received';}
+function fmt(n){if(n>=100000)return(n/100000).toFixed(1)+'L';if(n>=1000)return(n/1000).toFixed(1)+'K';return Math.round(n);}
+function nextJobId(){
+  var yr=new Date().getFullYear();
+  var jobs=loadJobs();
+  var max=0;
+  jobs.forEach(function(j){
+    var m=(j.jobId||'').match(/OM-\d{4}-(\d+)/);
+    if(m){var n=parseInt(m[1]);if(n>max)max=n;}
+  });
+  var seq=max+1;
+  return 'OM-'+yr+'-'+(seq<10?'000':seq<100?'00':seq<1000?'0':'')+seq;
+}
+function overdueJobs(){
+  var now=Date.now(),limit=30*24*60*60*1000;
+  return loadJobs().filter(function(j){
+    if(j.status==='Delivered')return false;
+    var d=j.isoDate?new Date(j.isoDate).getTime():0;
+    return d>0&&(now-d)>limit;
+  });
+}
+
+/* ── NAV ── */
+function nav(id){
+  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('on');});
+  document.querySelectorAll('.ni').forEach(function(n){n.classList.remove('on');});
+  var pg=document.getElementById('page-'+id);
+  if(pg){pg.classList.add('on');}
+  document.querySelectorAll('.ni[data-page="'+id+'"]').forEach(function(n){n.classList.add('on');});
+  document.getElementById('tbTtl').innerHTML=TITLES[id]||id;
+  if(id==='dashboard')renderDash();
+  if(id==='alljobs')renderAllJobs();
+  if(id==='techpanel')renderTPList();
+  if(id==='analytics')renderAnalytics();
+  if(id==='dailysummary'){var el=document.getElementById('ds_date');if(!el.value)el.value=new Date().toISOString().split('T')[0];renderDailySummary();}
+  if(id==='customers')renderCustomers();
+  if(id==='inventory')renderInventory();
+  if(id==='reports')renderReports();
+  if(id==='settings')renderSettings();
+}
+
+/* ── DASHBOARD ── */
+function refreshAll(){
+  var jobs=loadJobs(),active=0;
+  jobs.forEach(function(j){var s=(j.status||'').toLowerCase();if(s!=='delivered')active++;});
+  var el=document.getElementById('nbActive');if(el)el.textContent=active;
+  var td=document.getElementById('tbDate');if(td)td.textContent=new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+  // Overdue badge
+  var ov=overdueJobs(),ovBadge=document.getElementById('nbOverdue');
+  if(ovBadge){if(ov.length>0){ovBadge.style.display='flex';ovBadge.textContent=ov.length;}else ovBadge.style.display='none';}
+  if(document.getElementById('page-dashboard').classList.contains('on'))renderDash();
+}
+function renderDash(){
+  var jobs=loadJobs(),tot=jobs.length,billed=0,pending=0;
+  var byS={Received:0,Diagnosed:0,Repairing:0,Ready:0,Delivered:0};
+  jobs.forEach(function(j){var s=j.status||'Received';if(byS[s]!==undefined)byS[s]++;else byS.Received++;var c=parseFloat(j.finalCost)||0,a=parseFloat(j.advance)||0;billed+=c;if(c>a)pending+=(c-a);});
+  var active=byS.Received+byS.Diagnosed+byS.Repairing+byS.Ready;
+  document.getElementById('dashStats').innerHTML=sc('sc-gold','📋',tot,'Total Jobs','All time')+sc('sc-g','🔧',active,'Active Repairs',byS.Ready+' ready for pickup')+sc('sc-b','💰','₹'+fmt(billed),'Total Billed','Across all jobs')+sc('sc-o','⏳','₹'+fmt(pending),'Outstanding','Balance pending')+sc('sc-p','✅',byS.Delivered,'Delivered','Completed jobs');
+  var sorted=jobs.slice().sort(function(a,b){return(b.jobId||'').localeCompare(a.jobId||'');});
+  var h='';
+  if(!sorted.length)h='<tr><td colspan="5" class="tbl-empty">No jobs yet. <span style="color:var(--gold);cursor:pointer;" onclick="nav(\'newjob\')">Create first job →</span></td></tr>';
+  else sorted.slice(0,10).forEach(function(j){h+='<tr onclick="openDr(\''+esc(j.jobId)+'\')" style="cursor:pointer;"><td><span class="mono">'+esc(j.jobId)+'</span></td><td>'+esc((j.firstName||'')+' '+(j.lastName||''))+'</td><td style="font-size:11px;color:var(--mid);">'+esc((j.devType||'')+(j.devModel?' '+j.devModel:''))+'</td><td><span class="badge '+stcls(j.status)+'">'+esc(j.status||'Received')+'</span></td><td style="font-size:11px;color:var(--muted);">'+esc(j.isoDate||j.date||'')+'</td></tr>';});
+  document.getElementById('dashRecent').innerHTML=h;
+  var cl={Received:'#3498DB',Diagnosed:'#F39C12',Repairing:'#C9A84C',Ready:'#2ECC71',Delivered:'#555'};
+  var mx=Math.max.apply(null,Object.values(byS).concat([1]));
+  var sh='<div class="bar-wrap">';
+  Object.keys(byS).forEach(function(k){var pct=Math.round(byS[k]/mx*100);sh+='<div class="bar-row"><div class="bar-name">'+k+'</div><div class="bar-track"><div class="bar-fill" style="width:'+pct+'%;background:'+cl[k]+'"></div></div><div class="bar-val">'+byS[k]+'</div></div>';});
+  sh+='</div>';
+  document.getElementById('dashStatus').innerHTML=sh;
+  var col=0,adv2=0;jobs.forEach(function(j){var c=parseFloat(j.finalCost)||0,a=parseFloat(j.advance)||0;col+=c;adv2+=Math.min(a,c);});
+  document.getElementById('dashRev').innerHTML='<div style="font-size:10px;font-weight:700;color:var(--gold);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;">Revenue Summary</div>'+rv('Total Billed','₹'+col.toFixed(0))+rv('Collected','₹'+adv2.toFixed(0))+rv('Outstanding','₹'+(col-adv2).toFixed(0));
+}
+function sc(cls,ico,val,lbl,sub){return'<div class="sc '+cls+'"><div class="sc-ico">'+ico+'</div><div class="sc-val">'+val+'</div><div class="sc-lbl">'+lbl+'</div><div class="sc-sub">'+sub+'</div></div>';}
+function rv(l,v){return'<div class="rev-row"><span style="color:var(--muted);font-size:11px;">'+l+'</span><span style="font-family:\'JetBrains Mono\',monospace;font-size:12px;">'+v+'</span></div>';}
+
+/* ── JOB FORM ── */
+function pickChip(el,v){document.querySelectorAll('.chip').forEach(function(c){c.classList.remove('sel');});el.classList.add('sel');document.getElementById('j_cond').value=v;}
+function chk(btn,state){
+  var item=btn.closest('.chk'),btns=item.querySelectorAll('.chk-btn'),cur=item.dataset.state||'';
+  if(cur===state){item.dataset.state='';item.classList.remove('st-ok','st-na');btns.forEach(function(b){b.classList.remove('ok-on','na-on');});}
+  else{item.dataset.state=state;item.classList.toggle('st-ok',state==='ok');item.classList.toggle('st-na',state==='na');btns[0].classList.toggle('ok-on',state==='ok');btns[1].classList.toggle('na-on',state==='na');}
+}
+function getChklist(){var r={};document.querySelectorAll('#j_chklist .chk').forEach(function(i){r[i.dataset.key]=i.dataset.state||'';});return r;}
+function validateForm(){
+  var ok=true;
+  var cn=document.getElementById('j_custName');
+  if(!cn.value.trim()){cn.classList.add('err');document.getElementById('e_custName').classList.add('show');ok=false;}
+  else{cn.classList.remove('err');document.getElementById('e_custName').classList.remove('show');}
+  [{id:'j_fn',e:'e_fn',c:function(v){return v.trim().length>0;}},{id:'j_ln',e:'e_ln',c:function(v){return v.trim().length>0;}},{id:'j_em',e:'e_em',c:function(v){return/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());}},{id:'j_ph',e:'e_ph',c:function(v){return v.replace(/\D/g,'').length>=10;}},{id:'j_dt',e:'e_dt',c:function(v){return v!=='';}},{id:'j_dm',e:'e_dm',c:function(v){return v.trim().length>0;}},{id:'j_issue',e:'e_issue',c:function(v){return v.trim().length>5;}}].forEach(function(r){var el=document.getElementById(r.id),er=document.getElementById(r.e);if(el&&!r.c(el.value)){el.classList.add('err');if(er)er.classList.add('show');ok=false;}else{if(el)el.classList.remove('err');if(er)er.classList.remove('show');}});
+  if(!document.getElementById('j_tnc').checked){document.getElementById('e_tnc').classList.add('show');ok=false;}else{document.getElementById('e_tnc').classList.remove('show');}
+  return ok;
+}
+document.getElementById('jobForm').addEventListener('submit',function(e){
+  e.preventDefault();
+  if(!validateForm()){var fe=document.querySelector('.err,.show');if(fe)fe.scrollIntoView({behavior:'smooth',block:'center'});return;}
+  var now=new Date(),ds=now.toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'}),ts=now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true}),iso=now.toISOString().split('T')[0];
+  _job={jobId:nextJobId(),date:ds,isoDate:iso,time:ts,
+    firstName:document.getElementById('j_fn').value.trim(),lastName:document.getElementById('j_ln').value.trim(),
+    email:document.getElementById('j_em').value.trim(),phone:document.getElementById('j_ph').value.trim().replace(/\D/g,''),
+    altPhone:document.getElementById('j_ap').value.trim().replace(/\D/g,''),address:document.getElementById('j_addr').value.trim(),
+    gstNo:document.getElementById('j_gst').value.trim(),source:document.getElementById('j_src').value,
+    advance:document.getElementById('j_adv').value.trim()||'0',devType:document.getElementById('j_dt').value,
+    devModel:document.getElementById('j_dm').value.trim(),serial:document.getElementById('j_sn').value.trim(),
+    storage:document.getElementById('j_stor').value,color:document.getElementById('j_col').value.trim(),
+    passcode:document.getElementById('j_pc').value.trim(),condition:document.getElementById('j_cond').value||'Not specified',
+    issue:document.getElementById('j_issue').value.trim(),accessories:document.getElementById('j_acc').value.trim()||'None',
+    cost:document.getElementById('j_cost').value.trim(),tech:document.getElementById('j_tech').value.trim()||'Vinayak',
+    techName:document.getElementById('j_tech').value.trim()||'Vinayak',warranty:document.getElementById('j_war').value||'',
+    checklist:getChklist(),custConfirmName:document.getElementById('j_custName').value.trim(),
+    status:'Received',finalCost:'0',payMode:'',diagnosis:'',partsUsed:[],
+    repairLog:[{type:'created',action:'Job created',detail:document.getElementById('j_dt').value+' '+document.getElementById('j_dm').value.trim()+' · '+document.getElementById('j_issue').value.trim().substring(0,80),at:new Date().toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true}),by:me?me.u:''}]
+  };
+  var jobs=loadJobs();jobs.push(_job);saveJobs(jobs);
+  document.getElementById('j_custTs').textContent='✓ Confirmed by '+_job.custConfirmName+' on '+ds+' at '+ts;
+  document.getElementById('j_techTs').textContent='✓ Job created on '+ds+' at '+ts;
+  document.getElementById('suc_id').textContent=_job.jobId;
+  document.getElementById('suc_msg').innerHTML='Job for <strong>'+esc(_job.firstName)+' '+esc(_job.lastName)+'</strong> saved successfully.<br>'+ds+' at '+ts+' &nbsp;|&nbsp; Technician: <strong>'+esc(_job.tech)+'</strong>';
+  buildSR(_job);
+  document.getElementById('successOverlay').classList.add('show');
+  refreshAll();
+  toast('Job '+_job.jobId+' created and saved!',false);
+});
+function newJob(){
+  document.getElementById('successOverlay').classList.remove('show');
+  document.getElementById('jobForm').reset();
+  document.querySelectorAll('.chip').forEach(function(c){c.classList.remove('sel');});
+  document.querySelectorAll('#j_chklist .chk').forEach(function(i){i.dataset.state='';i.classList.remove('st-ok','st-na');i.querySelectorAll('.chk-btn').forEach(function(b){b.classList.remove('ok-on','na-on');});});
+  document.getElementById('j_cond').value='Not specified';
+  document.getElementById('j_tech').value='Vinayak';
+  document.getElementById('j_techDisp').textContent='Vinayak';
+  document.getElementById('j_custTs').textContent='Timestamp will appear here on submission';
+  document.getElementById('j_techTs').textContent='Job timestamp will appear on submission';
+  nav('newjob');window.scrollTo({top:0,behavior:'smooth'});
+}
+function doPrint(){buildSR(_job);setTimeout(printSR,300);}
+function doWA(){
+  var j=_job,msg='🛠️ *JOB CARD — OM SAI Apple Service Hub*\n\n📋 *Job ID:* '+j.jobId+'\n📅 *Date:* '+j.date+' at '+j.time+'\n\n👤 *Customer:* '+j.firstName+' '+j.lastName+'\n📞 *Phone:* +91 '+j.phone+'\n📧 *Email:* '+j.email+'\n\n📱 *Device:* '+j.devType+' '+j.devModel+(j.serial?'\n🔢 *Serial:* '+j.serial:'')+'\n🔍 *Condition:* '+j.condition+'\n\n⚠️ *Issue:* '+j.issue+'\n\n✍️ *Confirmed by:* '+j.custConfirmName+'\n👨‍🔧 *Technician:* '+j.tech+(j.cost?'\n💰 *Est. Cost:* ₹'+j.cost:'')+(j.advance&&j.advance!=='0'?'\n💵 *Advance:* ₹'+j.advance:'')+'\n\n📍 OM SAI Apple Service Hub | +91-7208325405\n_Trust · Quality · Care_';
+  window.open('https://wa.me/91'+j.phone.slice(-10)+'?text='+encodeURIComponent(msg),'_blank');
+}
+
+/* ── SERVICE REPORT ── */
+function buildSR(j){
+  var isFinal=(j.status==='Ready'||j.status==='Delivered');
+  var docTitle=isFinal?'FINAL REPORT':'SERVICE REPORT';
+  var chkH=Object.entries(j.checklist||{}).map(function(e){var ok=e[1]==='ok',na=e[1]==='na';var sty=ok?'background:#2ECC71;border-color:#2ECC71;color:#fff;':na?'background:#FFA500;border-color:#FFA500;color:#fff;':'';return'<div class="sr-chi"><div class="sr-chbox" style="'+sty+'">'+(ok?'✓':na?'–':'')+'</div> '+esc(e[0])+'</div>';}).join('');
+  // Build parts table
+  var usedParts=(j.partsUsed||[]).filter(function(p){return p.name&&p.name.trim();});
+  var partsH='';
+  if(usedParts.length){
+    partsH='<table class="sr-pt"><thead><tr><th>Part Name</th><th>Qty</th><th>Unit Price</th><th>Amount</th></tr></thead><tbody>';
+    usedParts.forEach(function(p){var q=parseInt(p.qty)||1,pr=parseFloat(p.price)||0;partsH+='<tr><td>'+esc(p.name)+'</td><td style="text-align:center;">'+q+'</td><td style="text-align:right;">'+(pr>0?'₹'+pr.toFixed(0):'—')+'</td><td style="text-align:right;">'+(pr>0?'₹'+(pr*q).toFixed(0):'—')+'</td></tr>';});
+    partsH+='</tbody></table>';
+  }
+  var war=j.warranty&&j.warranty!=='No Warranty'&&j.warranty?'<span class="sr-war">🛡️ Warranty: '+j.warranty+'</span>':'';
+  var qid='qr_'+Date.now();
+  document.getElementById('printArea').innerHTML=
+'<div class="sr">'+
+'<div class="sr-hdr">'+
+  '<div style="display:flex;align-items:center;gap:10px;flex:1;">'+
+    '<div class="sr-logo"><span class="sr-om">ॐ</span></div>'+
+    '<div class="sr-info">'+
+      '<div><span class="sr-badge">✦ '+docTitle+' ✦</span></div>'+
+      '<div class="sr-biz">OM SAI Apple Service Hub</div>'+
+      '<div class="sr-tag">Trust &middot; Quality &middot; Care &middot; Authorised Apple Repair</div>'+
+      '<div class="sr-contact">📞 +91-7208325405 &nbsp;|&nbsp; Dattapada Rd, Near Borivali Subway, Borivali (E), Mumbai – 400066</div>'+
+    '</div>'+
+  '</div>'+
+  '<div class="sr-meta">'+
+    '<div class="sr-jobid">'+esc(j.jobId)+'</div>'+
+    '<div class="sr-date">'+esc(j.date)+' | '+esc(j.time)+'</div>'+
+    war+
+    '<div id="'+qid+'" style="margin-top:4px;"></div>'+
+    '<div style="font-size:7px;color:#aaa;text-align:center;margin-top:1px;">Scan to verify</div>'+
+  '</div>'+
+'</div>'+
+'<div class="sr-body">'+
+  '<div class="sr-sec"><div class="sr-sec-t">Customer Information</div>'+
+    sf('Full Name',esc(j.firstName+' '+j.lastName))+sf('Phone','+91 '+esc(j.phone)+(j.altPhone?' / +91 '+esc(j.altPhone):''))+sf('Email',esc(j.email||'—'))+
+    (j.gstNo?sf('GST No.',esc(j.gstNo)):'')+
+    (j.advance&&j.advance!=='0'?sf('Advance Collected','₹ '+esc(j.advance)):'')+
+    (j.cost?sf('Estimated Cost','₹ '+esc(j.cost)):'')+
+  '</div>'+
+  '<div class="sr-sec"><div class="sr-sec-t">Device Information</div>'+
+    sf('Device Type',esc(j.devType))+sf('Model',esc(j.devModel))+
+    (j.storage?sf('Storage',esc(j.storage)):'')+
+    (j.color?sf('Color',esc(j.color)):'')+
+    (j.serial?sf('Serial / IMEI',esc(j.serial)):'')+
+    sf('Physical Condition',esc(j.condition))+sf('Accessories',esc(j.accessories||'None'))+sf('Technician',esc(j.tech))+
+  '</div>'+
+'</div>'+
+'<div class="sr-full sr-sec"><div class="sr-sec-t">Reported Issue / Customer Complaint</div><div class="sr-issue">'+esc(j.issue)+'</div></div>'+
+(j.diagnosis&&j.diagnosis.trim()?'<div class="sr-full sr-sec"><div class="sr-sec-t">Technician Diagnosis &amp; Repair Notes</div><div class="sr-notes">'+esc(j.diagnosis)+'</div></div>':'')+
+(partsH?'<div class="sr-full sr-sec"><div class="sr-sec-t">Parts Used in Repair</div><div class="sr-parts-tbl">'+partsH+'</div></div>':'')+
+(isFinal&&(parseFloat(j.finalCost)||0)>0?'<div class="sr-full sr-sec"><div class="sr-sec-t">Financial Summary</div><div style="display:flex;gap:18px;flex-wrap:wrap;">'+
+  '<div class="sr-f" style="min-width:90px;">'+sf('Total Cost','₹ '+esc(j.finalCost))+'</div>'+
+  '<div class="sr-f" style="min-width:90px;">'+sf('Advance Paid','₹ '+(j.advance||'0'))+'</div>'+
+  '<div class="sr-f" style="min-width:90px;">'+sf('Balance Due','₹ '+Math.max(0,parseFloat(j.finalCost)-parseFloat(j.advance||0)).toFixed(0))+'</div>'+
+  (j.payMode?'<div class="sr-f" style="min-width:90px;">'+sf('Payment Mode',esc(j.payMode))+'</div>':'')+
+'</div></div>':'')+
+'<div class="sr-full sr-sec"><div class="sr-sec-t">Physical Device Checklist at Time of Submission</div><div class="sr-chklist">'+chkH+'</div></div>'+
+'<div class="sr-sigs">'+
+  '<div class="sr-sig"><div class="sr-sig-lbl">Customer Signature</div><div class="sr-sig-val"><div class="sr-sig-name" style="font-size:13px;font-family:Georgia,serif;letter-spacing:.02em;border-bottom:1px solid #aaa;padding-bottom:4px;margin-bottom:3px;">'+esc(j.custConfirmName||(j.firstName+' '+j.lastName)||'—')+'</div><div class="sr-sig-ts">Typed name — agreed to T&amp;C on '+esc(j.date)+' at '+esc(j.time)+'</div></div><div class="sr-sname">Name: '+esc((j.firstName||'')+' '+(j.lastName||''))+'</div></div>'+
+  '<div class="sr-sig"><div class="sr-sig-lbl">Technician</div><div class="sr-sig-val sr-sig-tech"><div class="sr-sig-name">'+esc(j.tech||j.techName||'—')+'</div><div class="sr-sig-ts">'+(isFinal?'Repair completed':'Device received &amp; logged')+' · Job ID: '+esc(j.jobId)+'</div></div><div class="sr-sname">'+(isFinal?'Completed':'Received')+' on '+esc(j.date)+' at '+esc(j.time)+'</div></div>'+
+'</div>'+
+'<div class="sr-tnc"><div class="sr-tnc-t">Terms &amp; Conditions — Customer Agreed on '+esc(j.date)+'</div>'+
+  '<div class="sr-tnc-cols">'+
+    '<div><div class="sr-tnc-item"><strong>WARRANTY:</strong> Covers manufacturing defects &amp; installation errors only. Accidental/liquid damage not covered. Tampering voids warranty. Warranty applicable on replaced parts only. Cleaning and servicing are not covered under warranty.</div>'+
+    '<div class="sr-tnc-item"><strong>DATA:</strong> Back up before submission. We are not liable for data loss.</div>'+
+    '<div class="sr-tnc-item"><strong>PAYMENT:</strong> Full payment required on completion. No refunds on completed services or parts.</div></div>'+
+    '<div><div class="sr-tnc-item"><strong>DEVICE:</strong> Disclose all pre-existing damage. Estimates are approximate and may change with prior approval.</div>'+
+    '<div class="sr-tnc-item"><strong>LIABILITY:</strong> Not responsible for pre-existing damage or biometric failures (Face/Touch ID).</div>'+
+    '<div class="sr-tnc-item"><strong>UNCOLLECTED:</strong> Devices not collected within 30 days may be disposed of with prior notice.</div></div>'+
+  '</div>'+
+  '<div class="sr-tnc-ok">✓ Customer has read and agreed to all Terms &amp; Conditions above by typing their name as a digital signature.</div>'+
+'</div>'+
+'<div class="sr-foot"><strong>OM SAI Apple Service Hub</strong> — Trust &middot; Quality &middot; Care &nbsp;|&nbsp; +91-7208325405 &nbsp;|&nbsp; Dattapada Rd, Near Borivali Subway, Borivali (E) – 400066, Mumbai<br>Computer-generated '+docTitle+' &nbsp;|&nbsp; Job ID: '+esc(j.jobId)+' &nbsp;|&nbsp; Issued: '+esc(j.date)+' at '+esc(j.time)+' &nbsp;|&nbsp; No handwritten signature required</div>'+
+'</div>';
+  // Generate QR code then print
+  var qrEl=document.getElementById(qid);
+  if(qrEl){qrEl.innerHTML='';try{new QRCode(qrEl,{text:'OM SAI Apple Service Hub\n'+docTitle+'\nJob ID: '+j.jobId+'\n'+(j.firstName||'')+' '+(j.lastName||'')+'\n'+(j.devType||'')+' '+(j.devModel||'')+'\n+91-7208325405',width:56,height:56,colorDark:'#000',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.M});}catch(e){}}
+}
+function printSR(){window.print();}
+function sf(l,v){return'<div class="sr-f"><div class="sr-fl">'+l+'</div><div class="sr-fv">'+v+'</div></div>';}
+
+/* ── TECHNICIAN PANEL ── */
+function renderTPList(){
+  var jobs=loadJobs(),q=(document.getElementById('tp_search').value||'').toLowerCase(),sf2=document.getElementById('tp_filter').value;
+  if(q)jobs=jobs.filter(function(j){return(j.jobId||'').toLowerCase().includes(q)||(j.firstName||'').toLowerCase().includes(q)||(j.lastName||'').toLowerCase().includes(q)||(j.phone||'').includes(q)||(j.devType||'').toLowerCase().includes(q)||(j.devModel||'').toLowerCase().includes(q);});
+  if(sf2)jobs=jobs.filter(function(j){return(j.status||'Received')===sf2;});
+  jobs.sort(function(a,b){return(b.jobId||'').localeCompare(a.jobId||'');});
+  var h='';
+  if(!jobs.length){h='<div style="text-align:center;padding:28px 10px;color:var(--muted);font-size:12px;">'+(sf2||q?'No matching jobs found':'No jobs yet.<br><span style="color:var(--gold);cursor:pointer;" onclick="nav(\'newjob\')">+ Create first job</span>')+'</div>';}
+  else jobs.forEach(function(j){h+='<div class="tp-job'+(j.jobId===selJobId?' sel':'')+'" onclick="selectJob(\''+esc(j.jobId)+'\')">';h+='<div class="tj-top"><span class="tj-id">'+esc(j.jobId)+'</span><span class="badge '+stcls(j.status)+'">'+esc(j.status||'Received')+'</span></div>';h+='<div class="tj-name">'+esc((j.firstName||'')+' '+(j.lastName||''))+'</div><div class="tj-dev">'+esc((j.devType||'')+' '+(j.devModel||''))+'</div><div class="tj-date">'+esc(j.isoDate||j.date||'')+(j.finalCost&&j.finalCost!=='0'?' · ₹'+j.finalCost:'')+'</div>';h+='</div>';});
+  document.getElementById('tp_jobs').innerHTML=h;
+}
+function selectJob(id){
+  selJobId=id;renderTPList();
+  var j=loadJobs().find(function(x){return x.jobId===id;});
+  if(!j)return;renderTPDetail(j);
+}
+function renderTPDetail(j){
+  var si=STATUSES.indexOf(j.status||'Received');if(si<0)si=0;
+  var parts=j.partsUsed||[],pRows='';
+  parts.forEach(function(p,i){pRows+='<tr><td><input class="pts-inp" value="'+esc(p.name||'')+'" placeholder="Part name" onchange="updatePart(\''+esc(j.jobId)+'\','+i+',\'name\',this.value)"></td><td style="width:55px;"><input class="pts-inp" type="number" value="'+esc(p.qty||'1')+'" min="1" style="text-align:center;" onchange="updatePart(\''+esc(j.jobId)+'\','+i+',\'qty\',this.value)"></td><td style="width:80px;"><input class="pts-inp" type="number" value="'+esc(p.price||'')+'" placeholder="0" onchange="updatePart(\''+esc(j.jobId)+'\','+i+',\'price\',this.value)"></td><td style="width:30px;text-align:center;"><button class="pts-del" onclick="removePart(\''+esc(j.jobId)+'\','+i+')">×</button></td></tr>';});
+  var sstH='<div class="ssteps">';
+  STATUSES.forEach(function(s,i){var ico=['📥','🔬','🔧','✅','🏠'][i],cls=i<si?'done':i===si?'active':'';sstH+='<div class="sstep"><div class="sdot '+cls+'" onclick="setStatus(\''+esc(j.jobId)+'\','+i+')">'+(i<si?'✓':ico)+'</div><div class="slbl">'+s+'</div></div>';if(i<4)sstH+='<div class="sline'+(i<si?' done':'')+'"></div>';});
+  sstH+='</div>';
+  var cost=parseFloat(j.finalCost)||0,adv=parseFloat(j.advance)||0,bal=Math.max(0,cost-adv);
+  var h='<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:14px;flex-wrap:wrap;">';
+  h+='<div><div style="font-family:\'JetBrains Mono\',monospace;font-size:17px;font-weight:700;color:var(--gold);">'+esc(j.jobId)+'</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">'+esc(j.isoDate||j.date||'')+'</div></div>';
+  h+='<div style="display:flex;gap:6px;flex-wrap:wrap;">';
+  h+='<button class="btn btn-gold btn-sm" onclick="printSRFor(\''+esc(j.jobId)+'\')">🖨️ '+(j.status==='Ready'||j.status==='Delivered'?'Final Report':'Service Report')+'</button>';
+  h+='<button class="btn btn-outline btn-sm" onclick="openEdit(\''+esc(j.jobId)+'\')">✏️ Edit Job</button>';
+  h+='<button class="btn btn-green btn-sm" onclick="tpWA(\''+esc(j.jobId)+'\')">💬 WhatsApp</button>';
+  h+='<button class="btn btn-outline btn-sm" onclick="nav(\'invoice\');setTimeout(function(){document.getElementById(\'inv_input\').value=\''+esc(j.jobId)+'\';invSearch();},80)">🧾 Invoice</button>';
+  if(j.status!=='Delivered')h+='<button class="btn btn-red btn-sm" onclick="deleteJob(\''+esc(j.jobId)+'\')">🗑️ Delete</button>';
+  h+='</div></div>';
+  h+='<div class="card" style="margin-bottom:11px;"><div class="card-hd"><div class="card-ico">📊</div><div><div class="card-ttl">Repair Status</div><div class="card-sub2">Click a step to update</div></div></div><div class="card-body">'+sstH+'</div></div>';
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:11px;">';
+  h+=iCard('👤','Customer',rp('Name',esc((j.firstName||'')+' '+(j.lastName||'')))+rp('Phone',j.phone?'<a href="tel:+91'+esc(j.phone)+'" style="color:var(--gold)">+91 '+esc(j.phone)+'</a>':'—')+rp('Email',esc(j.email||'—'))+rp('Source',esc(j.source||'—')));
+  h+=iCard('📱','Device',rp('Type',esc(j.devType||'—'))+rp('Model',esc(j.devModel||'—'))+(j.serial?rp('Serial',esc(j.serial)):'')+rp('Condition',esc(j.condition||'—'))+rp('Accessories',esc(j.accessories||'—'))+(j.passcode?rp('🔑 Passcode','<span style="font-family:\'JetBrains Mono\',monospace;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.25);padding:1px 8px;border-radius:5px;color:var(--gold);letter-spacing:.06em;">'+esc(j.passcode)+'</span>'):rp('Passcode','<span style="color:var(--muted);">Not provided</span>')));
+  h+='</div>';
+  h+='<div class="card" style="margin-bottom:11px;"><div class="card-hd"><div class="card-ico">⚠️</div><div class="card-ttl">Issue / Complaint</div></div><div class="card-body"><div style="font-size:12px;line-height:1.65;color:var(--bright);">'+esc(j.issue||'—')+'</div></div></div>';
+  h+='<div class="card" style="margin-bottom:11px;"><div class="card-hd"><div class="card-ico">🔬</div><div class="card-ttl">Diagnosis &amp; Repair Notes</div></div><div class="card-body"><textarea class="pts-inp" style="width:100%;min-height:80px;border-radius:8px;resize:vertical;font-size:12px;line-height:1.5;" placeholder="Enter diagnosis, findings and repair notes…" onchange="updateField(\''+esc(j.jobId)+'\',\'diagnosis\',this.value)">'+esc(j.diagnosis||'')+'</textarea></div></div>';
+  h+='<div class="card" style="margin-bottom:11px;"><div class="card-hd"><div class="card-ico">🔩</div><div class="card-ttl">Parts Used</div><div style="margin-left:auto;"><button class="btn btn-outline btn-xs" onclick="addPart(\''+esc(j.jobId)+'\')">+ Add Part</button></div></div>';
+  h+='<div class="card-body"><div class="parts-tbl-wrap"><table class="pts-tbl"><thead><tr><th>Part Name</th><th>Qty</th><th>Price (₹)</th><th></th></tr></thead><tbody>'+pRows+'</tbody></table></div></div></div>';
+  h+='<div class="card" style="margin-bottom:11px;"><div class="card-hd"><div class="card-ico">💰</div><div class="card-ttl">Financials</div></div><div class="card-body">';
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:10px;">';
+  h+='<div class="field"><label>Final Cost (₹) <span style="font-size:9px;color:var(--gold);font-weight:400;text-transform:none;letter-spacing:0;">auto from parts</span></label><input class="pts-inp" type="number" value="'+esc(j.finalCost||'')+'" placeholder="0" style="border-radius:8px;" onchange="updateField(\''+esc(j.jobId)+'\',\'finalCost\',this.value);refreshBal(\''+esc(j.jobId)+'\')"></div>';
+  h+='<div class="field"><label>Advance (₹)</label><input class="pts-inp" type="number" value="'+esc(j.advance||'0')+'" placeholder="0" style="border-radius:8px;" onchange="updateField(\''+esc(j.jobId)+'\',\'advance\',this.value);refreshBal(\''+esc(j.jobId)+'\')"></div>';
+  h+='<div class="field"><label>Balance Due</label><div id="bal_disp" style="background:var(--dark5);border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-family:\'JetBrains Mono\',monospace;font-size:12px;color:'+(bal>0?'var(--orange)':'var(--green)')+';">'+(bal>0?'₹'+bal.toFixed(0):'✓ PAID')+'</div></div>';
+  h+='<div class="field"><label>Payment Mode</label><select class="pts-inp" style="border-radius:8px;" onchange="updateField(\''+esc(j.jobId)+'\',\'payMode\',this.value)"><option value="">—</option><option'+(j.payMode==='Cash'?' selected':'')+'>Cash</option><option'+(j.payMode==='UPI'?' selected':'')+'>UPI</option><option'+(j.payMode==='Card'?' selected':'')+'>Card</option><option'+(j.payMode==='Bank Transfer'?' selected':'')+'>Bank Transfer</option></select></div>';
+  h+='</div></div></div>';
+  // SAVE CHANGES BUTTON
+  h+='<div style="margin:6px 0 20px;padding:14px 16px;background:rgba(201,168,76,.05);border:1px solid rgba(201,168,76,.2);border-radius:10px;display:flex;align-items:center;justify-content:space-between;gap:12px;">';
+  h+='<div style="font-size:12px;color:var(--mid);">💾 Technician notes, parts and financials auto-save on change. Click below to confirm all changes.</div>';
+  h+='<button class="btn btn-gold" onclick="saveAllChanges(\''+esc(j.jobId)+'\')" style="white-space:nowrap;flex-shrink:0;">✅ Save &amp; Confirm Changes</button>';
+  h+='</div>';
+  // UNIFIED REPAIR LOG
+  var log=(j.repairLog||[]).slice().reverse();
+  h+='<div class="card" style="margin-bottom:20px;"><div class="card-hd"><div class="card-ico">📋</div><div><div class="card-ttl">Repair Log &amp; Audit Trail</div><div class="card-sub2">All changes — notes, parts, status and financials</div></div></div><div class="card-body">';
+  if(!log.length){
+    h+='<div style="font-size:12px;color:var(--muted);text-align:center;padding:12px 0;">No activity recorded yet. Every change from now will be logged here automatically.</div>';
+  } else {
+    log.forEach(function(e){
+      var icon={'status':'📊','diagnosis':'🔬','part_add':'➕','part_update':'✏️','part_remove':'🗑️','financial':'💰','created':'🆕'}[e.type]||'●';
+      var cls={'status':'rlog-status','diagnosis':'rlog-diagnosis','part_add':'rlog-part','part_update':'rlog-part','part_remove':'rlog-part','financial':'rlog-financial','created':'rlog-created'}[e.type]||'';
+      h+='<div class="rlog-entry '+cls+'">';
+      h+='<div class="rlog-action">'+icon+' '+esc(e.action)+'</div>';
+      if(e.detail)h+='<div class="rlog-detail">'+esc(e.detail)+'</div>';
+      h+='<div class="rlog-meta">'+esc(e.at||'')+(e.by?' &nbsp;·&nbsp; '+esc(e.by):'')+'</div>';
+      h+='</div>';
+    });
+  }
+  h+='</div></div>';
+  document.getElementById('tp_detail').innerHTML=h;
+}
+function iCard(ico,ttl,body){return'<div class="card" style="margin-bottom:0;"><div class="card-hd"><div class="card-ico">'+ico+'</div><div class="card-ttl">'+ttl+'</div></div><div class="card-body" style="padding:11px 14px;">'+body+'</div></div>';}
+function rp(l,v){return'<div style="display:flex;gap:6px;margin-bottom:5px;"><span style="color:var(--muted);min-width:65px;font-size:10px;flex-shrink:0;padding-top:1px;">'+l+'</span><span style="font-size:12px;font-weight:500;flex:1;">'+v+'</span></div>';}
+/* ── REPAIR LOG HELPER ── */
+function logRepair(jobs,i,type,action,detail){
+  if(!jobs[i].repairLog)jobs[i].repairLog=[];
+  jobs[i].repairLog.push({type:type,action:action,detail:detail||'',at:new Date().toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true}),by:me?me.u:''});
+}
+function now_ts(){return new Date().toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true});}
+
+function setStatus(jobId,idx){
+  var jobs=loadJobs(),i=jobs.findIndex(function(j){return j.jobId===jobId;});
+  if(i<0)return;
+  var prev=jobs[i].status||'Received';
+  jobs[i].status=STATUSES[idx];
+  if(!jobs[i].statusHistory)jobs[i].statusHistory=[];
+  jobs[i].statusHistory.push({status:STATUSES[idx],at:now_ts(),by:me?me.u:''});
+  logRepair(jobs,i,'status','Status changed: '+prev+' → '+STATUSES[idx]);
+  saveJobs(jobs);refreshAll();renderTPList();selectJob(jobId);
+  toast('Status → '+STATUSES[idx],false);
+  // Auto-WhatsApp when moved to Ready for Pickup
+  if(idx===3){
+    setTimeout(function(){
+      var j=jobs[i];
+      var c=parseFloat(j.finalCost)||0,a=parseFloat(j.advance)||0,b=Math.max(0,c-a);
+      var msg='✅ *Your device is Ready for Pickup!*\n\n'+'Dear '+j.firstName+',\n\nGreat news! Your repair is complete and your device is ready for collection.\n\n'+'📋 *Job ID:* '+j.jobId+'\n'+'📱 *Device:* '+j.devType+' '+j.devModel+'\n'+(j.techName||j.tech?'👨‍🔧 *Technician:* '+(j.techName||j.tech)+'\n':'')+(c>0?'💰 *Total Amount:* ₹'+c.toFixed(0)+'\n':'')+(b>0?'⚠️ *Balance Due:* ₹'+b.toFixed(0)+' (please bring exact amount)\n':'✅ *Payment:* Fully Paid\n')+(j.warranty&&j.warranty!=='No Warranty'?'🛡️ *Warranty:* '+j.warranty+'\n':'')+'⏰ *Store Hours:* Mon–Sun, 9 AM – 11 PM\n\nPlease visit us with this message and a valid ID to collect your device.\n\n📍 OM SAI Apple Service Hub\nDattapada Rd, Borivali (E), Mumbai\n📞 +91-7208325405\n\n_Thank you for choosing us! 🙏_';
+      var d=(j.phone||'').replace(/\D/g,'');
+      if(d.length>=10){
+        if(confirm('Device is Ready! Send WhatsApp pickup notification to '+j.firstName+' (+91 '+d.slice(-10)+')?')){
+          window.open('https://wa.me/91'+d.slice(-10)+'?text='+encodeURIComponent(msg),'_blank');
+        }
+      }
+    },400);
+  }
+}
+function saveAllChanges(jobId){
+  var jobs=loadJobs(),j=jobs.find(function(x){return x.jobId===jobId;});
+  if(!j){toast('Job not found',true);return;}
+  // Collect current field values from DOM
+  var diagEl=document.querySelector('#tp_detail textarea');
+  if(diagEl)updateField(jobId,'diagnosis',diagEl.value);
+  var inputs=document.querySelectorAll('#pts_tbody input');
+  var ptIdx=0;
+  inputs.forEach(function(inp){
+    // inputs come in groups of 3 per row: name, qty, price
+  });
+  // Reload and confirm
+  toast('✅ All changes saved for '+jobId,false);
+  // Flash the save button green briefly
+  var btn=document.querySelector('[onclick*="saveAllChanges"]');
+  if(btn){btn.style.background='var(--green)';btn.style.color='#000';btn.textContent='✓ Saved!';setTimeout(function(){btn.style.background='';btn.style.color='';btn.textContent='✅ Save & Confirm Changes';},2000);}
+}
+function updateField(jobId,field,val){
+  var jobs=loadJobs(),i=jobs.findIndex(function(j){return j.jobId===jobId;});
+  if(i<0)return;
+  var old=jobs[i][field];
+  jobs[i][field]=val;
+  if(field==='diagnosis'&&val.trim()&&val!==old){
+    logRepair(jobs,i,'diagnosis','Diagnosis / notes updated',val.length>120?val.substring(0,120)+'…':val);
+  } else if(field==='finalCost'&&val!==old){
+    logRepair(jobs,i,'financial','Final cost set to ₹'+val);
+  } else if(field==='advance'&&val!==old){
+    logRepair(jobs,i,'financial','Advance updated to ₹'+val);
+  } else if(field==='payMode'&&val!==old){
+    logRepair(jobs,i,'financial','Payment mode: '+val);
+  }
+  saveJobs(jobs);
+}
+function calcPartsTotal(jobId){
+  var jobs=loadJobs(),i=jobs.findIndex(function(j){return j.jobId===jobId;});
+  if(i<0)return;
+  var total=0;
+  (jobs[i].partsUsed||[]).forEach(function(p){total+=(parseFloat(p.price)||0)*(parseInt(p.qty)||1);});
+  jobs[i].finalCost=total.toFixed(0);
+  saveJobs(jobs);
+  // Update final cost input field in DOM
+  var fcEl=document.querySelector('#tp_detail input[onchange*="finalCost"]');
+  if(fcEl)fcEl.value=total.toFixed(0);
+  refreshBal(jobId);
+}
+function addPart(jobId){
+  var jobs=loadJobs(),i=jobs.findIndex(function(j){return j.jobId===jobId;});
+  if(i<0)return;
+  jobs[i].partsUsed=jobs[i].partsUsed||[];
+  jobs[i].partsUsed.push({name:'',qty:'1',price:''});
+  logRepair(jobs,i,'part_add','Part row added','Fill in part name, quantity and price below');
+  saveJobs(jobs);selectJob(jobId);
+}
+function updatePart(jobId,pi,field,val){
+  var jobs=loadJobs(),i=jobs.findIndex(function(j){return j.jobId===jobId;});
+  if(i<0||!jobs[i].partsUsed[pi])return;
+  var p=jobs[i].partsUsed[pi];
+  var old=p[field];
+  p[field]=val;
+  if(val&&val!==old){
+    var pName=p.name||('Part #'+(pi+1));
+    if(field==='name')logRepair(jobs,i,'part_update','Part renamed','→ '+val);
+    else if(field==='price'&&p.name)logRepair(jobs,i,'part_update','Part price set',''+pName+': ₹'+val+(p.qty&&p.qty!=='1'?' × '+p.qty:''));
+    else if(field==='qty'&&p.name)logRepair(jobs,i,'part_update','Part quantity updated',''+pName+': qty '+val);
+  }
+  saveJobs(jobs);calcPartsTotal(jobId);
+}
+function removePart(jobId,pi){
+  var jobs=loadJobs(),i=jobs.findIndex(function(j){return j.jobId===jobId;});
+  if(i<0)return;
+  var p=jobs[i].partsUsed[pi];
+  var pName=p&&p.name?p.name:'unnamed part';
+  logRepair(jobs,i,'part_remove','Part removed','Removed: '+pName+(p&&p.price?' (₹'+p.price+')':''));
+  jobs[i].partsUsed.splice(pi,1);
+  saveJobs(jobs);calcPartsTotal(jobId);selectJob(jobId);
+}
+function refreshBal(jobId){var j=loadJobs().find(function(x){return x.jobId===jobId;});if(!j)return;var c=parseFloat(j.finalCost)||0,a=parseFloat(j.advance)||0,b=Math.max(0,c-a),el=document.getElementById('bal_disp');if(el){el.textContent=b>0?'₹'+b.toFixed(0):'✓ PAID';el.style.color=b>0?'var(--orange)':'var(--green)';}}
+var _deleteJobId=null;
+function deleteJob(jobId){
+  // Block admin from deleting jobs
+  if(me && me.r==='Admin'){
+    toast('Admins cannot delete job cards. Only Technicians are authorised.',true);
+    return;
+  }
+  _deleteJobId=jobId;
+  document.getElementById('dm_joblbl').textContent='Deleting: '+jobId;
+  document.getElementById('dm_user').value='';
+  document.getElementById('dm_pass').value='';
+  document.getElementById('dm_err').textContent='';
+  document.getElementById('dm_err').classList.remove('show');
+  document.getElementById('deleteModal').classList.add('show');
+  setTimeout(function(){document.getElementById('dm_user').focus();},150);
+}
+function closeDeleteModal(){
+  document.getElementById('deleteModal').classList.remove('show');
+  _deleteJobId=null;
+}
+function confirmDelete(){
+  var u=(document.getElementById('dm_user').value||'').trim().toLowerCase();
+  var p=(document.getElementById('dm_pass').value||'').trim();
+  var err=document.getElementById('dm_err');
+  if(!u||!p){err.textContent='Please enter both username and password.';err.classList.add('show');return;}
+  var match=USERS.find(function(x){return x.u===u&&x.p===p;});
+  if(!match){
+    ['dm_user','dm_pass'].forEach(function(id){var el=document.getElementById(id);el.classList.add('err');setTimeout(function(){el.classList.remove('err');},600);});
+    err.textContent='Incorrect credentials.';
+    err.classList.add('show');
+    return;
+  }
+  // Block admin role even if credentials are correct
+  if(match.r==='Admin'){
+    ['dm_user','dm_pass'].forEach(function(id){var el=document.getElementById(id);el.classList.add('err');setTimeout(function(){el.classList.remove('err');},600);});
+    err.textContent='Admins are not permitted to delete job cards.';
+    err.classList.add('show');
+    return;
+  }
+  // Authorised Technician — proceed with delete
+  var jobId=_deleteJobId;
+  closeDeleteModal();
+  saveJobs(loadJobs().filter(function(j){return j.jobId!==jobId;}));
+  // Also delete from Firebase
+  if(window._fb) window._fb.deleteJob(jobId);
+  selJobId=null;
+  refreshAll();
+  renderTPList();
+  document.getElementById('tp_detail').innerHTML='<div class="tp-no"><div class="tp-no-ico">🗑️</div><div style="color:var(--muted);">Job '+esc(jobId)+' deleted by '+esc(match.u)+'</div></div>';
+  toast('Job '+jobId+' deleted by '+match.u,true);
+}
+document.getElementById('deleteModal').addEventListener('click',function(e){if(e.target===this)closeDeleteModal();});
+function printSRFor(jobId){var j=loadJobs().find(function(x){return x.jobId===jobId;});if(!j){toast('Job not found',true);return;}_job=j;buildSR(j);setTimeout(printSR,350);}
+function tpWA(jobId){var j=loadJobs().find(function(x){return x.jobId===jobId;});if(!j)return;var c=parseFloat(j.finalCost)||0,a=parseFloat(j.advance)||0,b=Math.max(0,c-a);var msg='🛠️ *OM SAI Apple Service Hub Update*\n\nDear '+j.firstName+',\n\nYour repair status:\n*Job ID:* '+j.jobId+'\n*Device:* '+j.devType+' '+j.devModel+'\n*Status:* '+j.status+(c>0?'\n*Total:* ₹'+c.toFixed(0):'')+(b>0?'\n*Balance Due:* ₹'+b.toFixed(0):'\n*Payment:* Fully Paid')+'\n\nPlease visit us to collect your device.\n📍 Dattapada Rd, Borivali (E)\n📞 +91-7208325405\n_Trust · Quality · Care_';var d=(j.phone||'').replace(/\D/g,'');if(d.length<10){toast('No valid phone',true);return;}window.open('https://wa.me/91'+d.slice(-10)+'?text='+encodeURIComponent(msg),'_blank');}
+
+/* ── EDIT JOB ── */
+function openEdit(jobId){
+  var j=loadJobs().find(function(x){return x.jobId===jobId;});
+  if(!j){toast('Job not found',true);return;}
+  document.getElementById('em_jobid').textContent=j.jobId;
+  document.getElementById('em_fn').value=j.firstName||'';
+  document.getElementById('em_ln').value=j.lastName||'';
+  document.getElementById('em_em').value=j.email||'';
+  document.getElementById('em_ph').value=j.phone||'';
+  document.getElementById('em_ap').value=j.altPhone||'';
+  document.getElementById('em_addr').value=j.address||'';
+  document.getElementById('em_gst').value=j.gstNo||'';
+  document.getElementById('em_dt').value=j.devType||'iPhone';
+  document.getElementById('em_dm').value=j.devModel||'';
+  document.getElementById('em_sn').value=j.serial||'';
+  document.getElementById('em_col').value=j.color||'';
+  document.getElementById('em_pc').value=j.passcode||'';
+  document.getElementById('em_acc').value=j.accessories||'';
+  document.getElementById('em_issue').value=j.issue||'';
+  document.getElementById('em_war').value=j.warranty||'';
+  document.getElementById('em_tech').value=j.tech||j.techName||'';
+  document.getElementById('editModal').classList.add('show');
+}
+function closeEdit(){document.getElementById('editModal').classList.remove('show');}
+function saveEdit(){
+  var jobId=document.getElementById('em_jobid').textContent;
+  var jobs=loadJobs(),i=jobs.findIndex(function(j){return j.jobId===jobId;});
+  if(i<0){toast('Job not found',true);return;}
+  jobs[i].firstName=document.getElementById('em_fn').value.trim();
+  jobs[i].lastName=document.getElementById('em_ln').value.trim();
+  jobs[i].email=document.getElementById('em_em').value.trim();
+  jobs[i].phone=document.getElementById('em_ph').value.trim().replace(/\D/g,'');
+  jobs[i].altPhone=document.getElementById('em_ap').value.trim().replace(/\D/g,'');
+  jobs[i].address=document.getElementById('em_addr').value.trim();
+  jobs[i].gstNo=document.getElementById('em_gst').value.trim();
+  jobs[i].devType=document.getElementById('em_dt').value;
+  jobs[i].devModel=document.getElementById('em_dm').value.trim();
+  jobs[i].serial=document.getElementById('em_sn').value.trim();
+  jobs[i].color=document.getElementById('em_col').value.trim();
+  jobs[i].passcode=document.getElementById('em_pc').value.trim();
+  jobs[i].accessories=document.getElementById('em_acc').value.trim();
+  jobs[i].issue=document.getElementById('em_issue').value.trim();
+  jobs[i].warranty=document.getElementById('em_war').value;
+  jobs[i].tech=document.getElementById('em_tech').value.trim();
+  jobs[i].techName=document.getElementById('em_tech').value.trim();
+  saveJobs(jobs);
+  closeEdit();
+  refreshAll();
+  if(selJobId===jobId)selectJob(jobId);
+  if(document.getElementById('page-alljobs').classList.contains('on'))renderAllJobs();
+  toast('✅ Job '+jobId+' updated',false);
+}
+// Close edit modal on backdrop click
+document.getElementById('editModal').addEventListener('click',function(e){if(e.target===this)closeEdit();});
+
+/* ── INVOICE SEARCH ── */
+function invSearch(){
+  var q=(document.getElementById('inv_input').value||'').trim().toLowerCase();
+  var dd=document.getElementById('inv_dd');
+  if(!q){dd.classList.remove('show');dd.innerHTML='';return;}
+  var jobs=loadJobs().filter(function(j){return(j.jobId||'').toLowerCase().includes(q)||(j.firstName||'').toLowerCase().includes(q)||(j.lastName||'').toLowerCase().includes(q)||(j.phone||'').includes(q);});
+  if(!jobs.length){dd.innerHTML='<div style="padding:9px 13px;font-size:12px;color:var(--muted);">No jobs found</div>';dd.classList.add('show');return;}
+  dd.innerHTML=jobs.slice(0,8).map(function(j){return'<div class="inv-dd-item" onclick="pickInvJob(\''+esc(j.jobId)+'\')"><div class="inv-dd-id">'+esc(j.jobId)+'</div><div class="inv-dd-name">'+esc((j.firstName||'')+' '+(j.lastName||''))+'</div><div class="inv-dd-dev">'+esc((j.devType||'')+' '+(j.devModel||''))+(j.status?' · <span class="badge '+stcls(j.status)+'" style="font-size:8px;">'+j.status+'</span>':'')+'</div></div>';}).join('');
+  dd.classList.add('show');
+}
+function pickInvJob(jobId){
+  document.getElementById('inv_input').value=jobId;
+  closeInvDD();
+  genInvoice();
+}
+function closeInvDD(){var dd=document.getElementById('inv_dd');if(dd){dd.classList.remove('show');dd.innerHTML='';}}
+document.addEventListener('click',function(e){if(!e.target.closest('.inv-search-wrap'))closeInvDD();});
+
+/* ── BULK WHATSAPP ── */
+function bulkWA(){
+  var readyJobs=loadJobs().filter(function(j){return j.status==='Ready';});
+  if(!readyJobs.length){toast('No jobs with Ready status',true);return;}
+  var valid=readyJobs.filter(function(j){return(j.phone||'').replace(/\D/g,'').length>=10;});
+  if(!valid.length){toast('No valid phone numbers found',true);return;}
+  if(!confirm('Send WhatsApp pickup reminders to '+valid.length+' customer'+(valid.length>1?'s':'')+' (Ready status)?\n\nChrome will open '+valid.length+' WhatsApp tab'+(valid.length>1?'s':'')+' — allow pop-ups if prompted.')){return;}
+  var delay=0;
+  valid.forEach(function(j){
+    setTimeout(function(){
+      var c=parseFloat(j.finalCost)||0,a=parseFloat(j.advance)||0,b=Math.max(0,c-a);
+      var msg='📱 *Reminder — OM SAI Apple Service Hub*\n\nDear '+j.firstName+',\n\nYour device is ready and waiting for collection!\n\n📋 *Job ID:* '+j.jobId+'\n📱 *Device:* '+j.devType+' '+j.devModel+(c>0?'\n💰 *Amount Due:* ₹'+b.toFixed(0)+' (please bring exact amount)':'\n✅ *Payment:* Fully Paid')+'\n\n⏰ Store open Mon–Sun, 9 AM – 11 PM\n📍 Dattapada Rd, Borivali (E), Mumbai\n📞 +91-7208325405\n\n_Please collect at the earliest to avoid storage charges._\n_Trust · Quality · Care 🙏_';
+      var d=j.phone.replace(/\D/g,'');
+      window.open('https://wa.me/91'+d.slice(-10)+'?text='+encodeURIComponent(msg),'_blank');
+    },delay);
+    delay+=800;
+  });
+  toast('Sending reminders to '+valid.length+' customers…',false);
+}
+function genInvoice(){
+  var id=(document.getElementById('inv_input').value||'').trim().toUpperCase();
+  if(!id){toast('Please enter a Job ID',true);return;}
+  var j=loadJobs().find(function(x){return(x.jobId||'').toUpperCase()===id;});
+  if(!j){document.getElementById('inv_out').innerHTML='<div class="card" style="text-align:center;padding:36px;"><div style="font-size:32px;opacity:.3;margin-bottom:10px;">❌</div><div style="color:var(--muted);">Job ID <strong style="color:var(--white);">'+esc(id)+'</strong> not found in the system.</div></div>';return;}
+  var parts=(j.partsUsed||[]).filter(function(p){return p.name&&p.name.trim();}),cost=parseFloat(j.finalCost)||0,adv=parseFloat(j.advance)||0,bal=Math.max(0,cost-adv),isPaid=bal<=0,invNo='INV-'+j.jobId;
+  var rows='';
+  if(parts.length)parts.forEach(function(p){var pr=parseFloat(p.price)||0,q=parseInt(p.qty)||1;rows+='<tr><td style="padding:5px 7px;border:1px solid #e8e0cc;">'+esc(p.name)+'</td><td style="padding:5px 7px;border:1px solid #e8e0cc;text-align:center;">'+q+'</td><td style="padding:5px 7px;border:1px solid #e8e0cc;text-align:right;">'+(pr>0?'₹'+pr.toFixed(0):'—')+'</td><td style="padding:5px 7px;border:1px solid #e8e0cc;text-align:right;">'+(pr>0?'₹'+(pr*q).toFixed(0):'—')+'</td></tr>';});
+  else rows='<tr><td colspan="4" style="padding:6px 7px;border:1px solid #e8e0cc;color:#888;font-style:italic;">General repair service — '+esc(j.devType+' '+j.devModel)+'</td></tr>';
+  var inv='<div style="background:#fff;padding:14px 16px;font-family:Arial,sans-serif;font-size:9.5px;color:#000;">';
+  inv+='<div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #C9A84C;padding-bottom:9px;margin-bottom:10px;">';
+  inv+='<div style="display:flex;align-items:center;gap:8px;"><div style="width:36px;height:36px;border-radius:50%;background:#0A0A0A;border:2px solid #C9A84C;display:flex;align-items:center;justify-content:center;font-size:17px;color:#C9A84C;font-family:serif;flex-shrink:0;">ॐ</div><div><div style="font-size:12px;font-weight:900;line-height:1.2;">OM SAI Apple Service Hub</div><div style="font-size:7.5px;color:#888;text-transform:uppercase;letter-spacing:.1em;margin-top:1px;">Trust · Quality · Care</div><div style="font-size:7.5px;color:#666;margin-top:1px;">+91-7208325405 | Dattapada Rd, Borivali (E), Mumbai</div></div></div>';
+  inv+='<div style="text-align:right;"><div style="display:inline-block;background:#C9A84C;color:#000;font-size:7px;font-weight:900;letter-spacing:.2em;text-transform:uppercase;padding:2px 9px;border-radius:3px;margin-bottom:4px;">INVOICE</div><div style="font-family:monospace;font-size:12px;font-weight:900;color:#C9A84C;">'+esc(invNo)+'</div><div style="font-size:8px;color:#555;margin-top:1px;">Job: '+esc(j.jobId)+'</div><div style="font-size:8px;color:#555;">'+esc(j.isoDate||j.date||'')+'</div></div>';
+  inv+='</div>';
+  inv+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:0 16px;margin-bottom:10px;">';
+  inv+='<div><div style="font-size:7px;font-weight:700;color:#C9A84C;text-transform:uppercase;letter-spacing:.1em;border-bottom:1px solid #e8d9b0;padding-bottom:2px;margin-bottom:5px;">Bill To</div><div style="font-size:10px;font-weight:700;">'+esc(j.firstName+' '+j.lastName)+'</div><div style="font-size:8.5px;color:#555;margin-top:1px;">📞 +91 '+esc(j.phone||'—')+'</div><div style="font-size:8.5px;color:#555;">📧 '+esc(j.email||'—')+'</div>'+(j.gstNo?'<div style="font-size:8.5px;color:#555;">GST: '+esc(j.gstNo)+'</div>':'')+'</div>';
+  inv+='<div><div style="font-size:7px;font-weight:700;color:#C9A84C;text-transform:uppercase;letter-spacing:.1em;border-bottom:1px solid #e8d9b0;padding-bottom:2px;margin-bottom:5px;">Device</div><div style="font-size:10px;font-weight:700;">'+esc((j.devType||'')+' '+(j.devModel||''))+'</div>'+(j.serial?'<div style="font-size:8.5px;color:#555;">Serial: '+esc(j.serial)+'</div>':'')+'<div style="font-size:8.5px;color:#555;">Technician: '+esc(j.techName||j.tech||'—')+'</div>'+(j.warranty?'<div style="font-size:8.5px;color:#555;">Warranty: '+esc(j.warranty)+'</div>':'')+'</div>';
+  inv+='</div>';
+  inv+='<table style="width:100%;border-collapse:collapse;margin-bottom:8px;"><thead><tr style="background:#fff8e1;"><th style="padding:5px 7px;border:1px solid #e8e0cc;text-align:left;font-size:7.5px;text-transform:uppercase;letter-spacing:.07em;color:#C9A84C;">Description</th><th style="padding:5px 7px;border:1px solid #e8e0cc;text-align:center;font-size:7.5px;text-transform:uppercase;letter-spacing:.07em;color:#C9A84C;">Qty</th><th style="padding:5px 7px;border:1px solid #e8e0cc;text-align:right;font-size:7.5px;text-transform:uppercase;letter-spacing:.07em;color:#C9A84C;">Unit</th><th style="padding:5px 7px;border:1px solid #e8e0cc;text-align:right;font-size:7.5px;text-transform:uppercase;letter-spacing:.07em;color:#C9A84C;">Amount</th></tr></thead><tbody>'+rows+'</tbody>';
+  if(cost>0){inv+='<tfoot>';if(adv>0){inv+='<tr><td colspan="3" style="padding:4px 7px;border:1px solid #e8e0cc;text-align:right;font-size:8.5px;color:#555;">Subtotal</td><td style="padding:4px 7px;border:1px solid #e8e0cc;text-align:right;font-weight:700;">₹'+cost.toFixed(0)+'</td></tr>';inv+='<tr><td colspan="3" style="padding:4px 7px;border:1px solid #e8e0cc;text-align:right;font-size:8.5px;color:#555;">Advance Paid</td><td style="padding:4px 7px;border:1px solid #e8e0cc;text-align:right;color:#2E7D32;">− ₹'+adv.toFixed(0)+'</td></tr>';}inv+='<tr style="background:#fff8e1;"><td colspan="3" style="padding:6px 7px;border:2px solid #C9A84C;text-align:right;font-weight:900;font-size:9.5px;color:#C9A84C;">BALANCE DUE</td><td style="padding:6px 7px;border:2px solid #C9A84C;text-align:right;font-weight:900;font-size:13px;color:#C9A84C;">₹'+bal.toFixed(0)+'</td></tr></tfoot>';}
+  inv+='</table>';
+  var bg=isPaid?'#e8f5e9':'#fff8e1',bdr=isPaid?'#4CAF50':'#FFB300',tc=isPaid?'#2E7D32':'#E65100';
+  if(cost>0)inv+='<div style="background:'+bg+';border:1px solid '+bdr+';border-radius:4px;padding:6px 10px;margin-bottom:7px;display:flex;justify-content:space-between;align-items:center;"><div style="font-size:8.5px;color:'+tc+';font-weight:700;">'+(isPaid?'✓ FULLY PAID':'BALANCE OUTSTANDING')+'</div><div style="font-size:14px;font-weight:900;color:'+tc+';font-family:monospace;">₹'+(isPaid?adv:bal).toFixed(0)+'</div></div>';
+  inv+='<div style="background:#fff8e1;border:1px solid #FFB300;border-radius:4px;padding:5px 8px;margin-bottom:6px;font-size:8px;color:#555;">🛡️ <strong>Warranty:</strong> 30 Days on replaced parts. Physical/liquid damage not covered. Warranty void if tampered.</div>';
+  inv+='<div style="text-align:center;font-size:8px;color:#8B6914;font-style:italic;background:#fffdf0;border:1px solid #e8d9b0;border-radius:4px;padding:5px;margin-bottom:6px;">💛 Thank you for trusting OM SAI Apple Service Hub. Your satisfaction is our commitment!</div>';
+  inv+='<div style="text-align:center;border-top:1px solid #eee;padding-top:5px;font-size:7px;color:#aaa;line-height:1.5;">OM SAI Apple Service Hub · +91-7208325405 · Dattapada Rd, Borivali (E), Mumbai – 400066<br>'+esc(invNo)+' | Job: '+esc(j.jobId)+' | Computer-generated invoice, no handwritten signature required</div>';
+  inv+='</div>';
+  document.getElementById('inv_out').innerHTML='<div class="card"><div class="card-hd"><div class="card-ico">🧾</div><div class="card-ttl">Invoice Preview — '+esc(invNo)+'</div><div style="margin-left:auto;display:flex;gap:7px;"><button class="btn btn-gold btn-sm" onclick="printInv()">🖨️ Print</button><button class="btn btn-green btn-sm" onclick="invWA(\''+esc(j.jobId)+'\')">💬 WhatsApp</button><button class="btn btn-outline btn-sm" onclick="clearInvoice()">✕</button></div></div><div class="inv-preview">'+inv+'</div></div>';
+  document.getElementById('printArea').innerHTML=inv;
+  toast('Invoice generated for '+esc(j.firstName)+' '+esc(j.lastName),false);
+}
+function clearInvoice(){document.getElementById('inv_input').value='';document.getElementById('inv_out').innerHTML='<div class="card" style="text-align:center;padding:48px 24px;"><div style="font-size:44px;opacity:.2;margin-bottom:12px;">🧾</div><div style="font-size:13px;color:var(--muted);">Enter a Job ID above and click Generate.</div></div>';}
+function printInv(){setTimeout(function(){window.print();},100);}
+function invWA(jobId){var j=loadJobs().find(function(x){return x.jobId===jobId;});if(!j)return;var c=parseFloat(j.finalCost)||0,a=parseFloat(j.advance)||0,b=Math.max(0,c-a),ip=b<=0;var pt=(j.partsUsed||[]).filter(function(p){return p.name&&p.name.trim();}).map(function(p){return'  • '+p.name+(p.qty&&p.qty!='1'?' ×'+p.qty:'')+(parseFloat(p.price)>0?' — ₹'+p.price:'');}).join('\n')||'  • General repair service';var msg='🧾 *Invoice — OM SAI Apple Service Hub*\n\nInvoice: INV-'+j.jobId+'\nJob: '+j.jobId+'\nCustomer: '+j.firstName+' '+j.lastName+'\nDevice: '+j.devType+' '+j.devModel+'\n\n*Services:*\n'+pt+'\n\n'+(c>0?'Total: ₹'+c.toFixed(0)+'\n':'')+(a>0?'Advance: ₹'+a.toFixed(0)+'\n':'')+(ip?'*Status: FULLY PAID ✅*':'*Balance Due: ₹'+b.toFixed(0)+'*')+'\n\nWarranty: 30 Days on replaced parts.\nThank you!\n📞 +91-7208325405';var d=(j.phone||'').replace(/\D/g,'');if(d.length<10){toast('No valid phone',true);return;}window.open('https://wa.me/91'+d.slice(-10)+'?text='+encodeURIComponent(msg),'_blank');}
+
+/* ── ALL JOBS ── */
+function renderAllJobs(){
+  var jobs=loadJobs();
+  var q=(document.getElementById('aj_search').value||'').toLowerCase();
+  var sf=document.getElementById('aj_status').value;
+  var df=document.getElementById('aj_device').value;
+  if(q)jobs=jobs.filter(function(j){return(j.jobId||'').toLowerCase().includes(q)||(j.firstName||'').toLowerCase().includes(q)||(j.lastName||'').toLowerCase().includes(q)||(j.phone||'').includes(q)||(j.devModel||'').toLowerCase().includes(q)||(j.issue||'').toLowerCase().includes(q);});
+  if(sf)jobs=jobs.filter(function(j){return(j.status||'Received')===sf;});
+  if(df)jobs=jobs.filter(function(j){return(j.devType||'').toLowerCase().includes(df.toLowerCase());});
+  jobs.sort(function(a,b){return(b.jobId||'').localeCompare(a.jobId||'');});
+  // Overdue alert
+  var ov=overdueJobs();
+  var ovAlert=document.getElementById('overdue_alert');
+  var ovMsg=document.getElementById('overdue_msg');
+  if(ov.length>0){
+    ovAlert.style.display='flex';
+    ovMsg.textContent=ov.length+' device'+(ov.length>1?'s have':'has')+' been waiting 30+ days without collection: '+ov.map(function(j){return j.jobId;}).join(', ');
+  } else ovAlert.style.display='none';
+  var h='';
+  if(!jobs.length){h='<div class="tbl-wrap"><div class="tbl-empty">'+(q||sf||df?'No jobs match your search.':'No jobs yet. <span style="color:var(--gold);cursor:pointer;" onclick="nav(\'newjob\')">Create first job →</span>')+'</div></div>';document.getElementById('aj_table').innerHTML=h;return;}
+  var now=Date.now(),limit=30*24*60*60*1000;
+  h='<div class="tbl-wrap"><table class="dtbl"><thead><tr><th>Job ID</th><th>Customer</th><th>Device</th><th>Issue</th><th>Status</th><th>Cost</th><th>Date</th><th></th></tr></thead><tbody>';
+  jobs.forEach(function(j){
+    var d=j.isoDate?new Date(j.isoDate).getTime():0;
+    var isOverdue=d>0&&(now-d)>limit&&j.status!=='Delivered';
+    var rowStyle=isOverdue?'background:rgba(231,76,60,.04);':'' ;
+    h+='<tr style="'+rowStyle+'" onclick="openDr(\''+esc(j.jobId)+'\')" >';
+    h+='<td><span class="mono">'+esc(j.jobId)+'</span>'+(isOverdue?'<span style="font-size:9px;background:rgba(231,76,60,.15);color:var(--red);border:1px solid rgba(231,76,60,.3);padding:1px 5px;border-radius:100px;margin-left:5px;">OVERDUE</span>':'')+'</td>';
+    h+='<td><div style="font-weight:500;font-size:12px;">'+esc((j.firstName||'')+' '+(j.lastName||''))+'</div><div style="font-size:10px;color:var(--muted);">+91 '+esc(j.phone||'—')+'</div></td>';
+    h+='<td><div style="font-size:12px;">'+esc((j.devType||'')+(j.devModel?' '+j.devModel:''))+'</div></td>';
+    h+='<td style="font-size:11px;color:var(--mid);max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+esc((j.issue||'').substring(0,50))+'</td>';
+    h+='<td><span class="badge '+stcls(j.status)+'">'+esc(j.status||'Received')+'</span></td>';
+    h+='<td style="font-family:\'JetBrains Mono\',monospace;font-size:11px;">'+(parseFloat(j.finalCost)>0?'₹'+parseFloat(j.finalCost).toFixed(0):'—')+'</td>';
+    h+='<td style="font-size:11px;color:var(--muted);">'+esc(j.isoDate||'')+'</td>';
+    h+='<td onclick="event.stopPropagation()" style="white-space:nowrap;"><button class="btn btn-outline btn-xs" style="margin-right:3px;" onclick="openEdit(\''+esc(j.jobId)+'\')">✏️</button><button class="btn btn-outline btn-xs" onclick="closeDr();nav(\'techpanel\');setTimeout(function(){selectJob(\''+esc(j.jobId)+'\');},80)">Open</button></td>';
+    h+='</tr>';
+  });
+  h+='</tbody></table></div>';
+  h+='<div style="font-size:11px;color:var(--muted);margin-top:8px;text-align:right;">'+jobs.length+' job'+(jobs.length===1?'':'s')+' shown</div>';
+  document.getElementById('aj_table').innerHTML=h;
+}
+function filterOverdue(){
+  document.getElementById('aj_status').value='';
+  document.getElementById('aj_search').value='';
+  document.getElementById('aj_device').value='';
+  // Filter to overdue manually
+  var ov=overdueJobs().map(function(j){return j.jobId;});
+  document.getElementById('aj_search').value=ov[0]||'';
+  renderAllJobs();
+  // Clear and re-render all overdue properly
+  document.getElementById('aj_search').value='';
+  var jobs=loadJobs(),now=Date.now(),limit=30*24*60*60*1000;
+  var ovJobs=jobs.filter(function(j){var d=j.isoDate?new Date(j.isoDate).getTime():0;return d>0&&(now-d)>limit&&j.status!=='Delivered';});
+  ovJobs.sort(function(a,b){return(a.isoDate||'').localeCompare(b.isoDate||'')});
+  var h='<div class="tbl-wrap"><table class="dtbl"><thead><tr><th>Job ID</th><th>Customer</th><th>Device</th><th>Status</th><th>Days Waiting</th><th>Phone</th></tr></thead><tbody>';
+  if(!ovJobs.length){h='<div class="tbl-wrap"><div class="tbl-empty" style="color:var(--green);">✅ No overdue jobs — all devices collected or delivered.</div></div>';document.getElementById('aj_table').innerHTML=h;return;}
+  ovJobs.forEach(function(j){var days=Math.floor((now-new Date(j.isoDate).getTime())/86400000);h+='<tr style="background:rgba(231,76,60,.05);" onclick="openDr(\''+esc(j.jobId)+'\')"><td><span class="mono">'+esc(j.jobId)+'</span></td><td>'+esc((j.firstName||'')+' '+(j.lastName||''))+'</td><td>'+esc((j.devType||'')+' '+(j.devModel||''))+'</td><td><span class="badge '+stcls(j.status)+'">'+esc(j.status)+'</span></td><td style="color:var(--red);font-weight:700;font-family:\'JetBrains Mono\',monospace;">'+days+' days</td><td><a href="tel:+91'+esc(j.phone||'')+'" style="color:var(--gold)">+91 '+esc(j.phone||'—')+'</a></td></tr>';});
+  h+='</tbody></table></div>';
+  document.getElementById('aj_table').innerHTML=h;
+}
+function clearAJFilters(){document.getElementById('aj_search').value='';document.getElementById('aj_status').value='';document.getElementById('aj_device').value='';renderAllJobs();}
+
+/* ── DAILY SUMMARY ── */
+function renderDailySummary(){
+  var dateVal=document.getElementById('ds_date').value;
+  if(!dateVal)return;
+  var jobs=loadJobs().filter(function(j){return(j.isoDate||'')=== dateVal;});
+  var isToday=dateVal===new Date().toISOString().split('T')[0];
+  var label=isToday?'Today ('+dateVal+')':dateVal;
+  var totalIn=jobs.length,billed=0,collected=0,partsUsed=0;
+  var byS={Received:0,Diagnosed:0,Repairing:0,Ready:0,Delivered:0};
+  jobs.forEach(function(j){var s=j.status||'Received';if(byS[s]!==undefined)byS[s]++;var c=parseFloat(j.finalCost)||0,a=parseFloat(j.advance)||0;billed+=c;collected+=Math.min(a,c);partsUsed+=(j.partsUsed||[]).filter(function(p){return p.name&&p.name.trim();}).length;});
+  // Also find all Ready jobs (regardless of intake date) that are pending collection
+  var pendingCollection=loadJobs().filter(function(j){return j.status==='Ready';});
+  var h='';
+  // Header date bar
+  h+='<div style="background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.2);border-radius:10px;padding:12px 18px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;">';
+  h+='<div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;font-weight:700;">Report Date</div><div style="font-size:18px;font-weight:700;color:var(--gold);font-family:\'Playfair Display\',serif;margin-top:2px;">'+label+'</div></div>';
+  h+='<div style="font-size:11px;color:var(--muted);">Generated '+new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true})+'</div></div>';
+  // Stat cards row
+  h+='<div class="stats-row" style="margin-bottom:16px;">';
+  h+=sc('sc-gold','📋',totalIn,'Jobs Taken In',isToday?'today':'this day');
+  h+=sc('sc-g','✅',byS.Delivered,'Delivered',isToday?'today':'this day');
+  h+=sc('sc-b','💰','₹'+fmt(billed),'Total Billed','for '+label);
+  h+=sc('sc-o','💵','₹'+fmt(collected),'Cash / Advance','collected today');
+  h+=sc('sc-p','⏳',pendingCollection.length,'Ready to Collect','waiting at shop');
+  h+='</div>';
+  // Today's jobs table
+  h+='<div style="font-family:\'Playfair Display\',serif;font-size:14px;font-weight:700;margin-bottom:9px;">Jobs Received on '+label+'</div>';
+  if(!jobs.length){h+='<div class="tbl-wrap"><div class="tbl-empty">No jobs were created on this date.</div></div>';}
+  else{
+    h+='<div class="tbl-wrap" style="margin-bottom:16px;"><table class="dtbl"><thead><tr><th>Job ID</th><th>Customer</th><th>Device</th><th>Issue</th><th>Status</th><th>Amount</th></tr></thead><tbody>';
+    jobs.forEach(function(j){h+='<tr onclick="openDr(\''+esc(j.jobId)+'\')" style="cursor:pointer;"><td><span class="mono">'+esc(j.jobId)+'</span></td><td>'+esc((j.firstName||'')+' '+(j.lastName||''))+'</td><td style="font-size:11px;">'+esc((j.devType||'')+' '+(j.devModel||''))+'</td><td style="font-size:11px;color:var(--mid);max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+esc((j.issue||'').substring(0,45))+'</td><td><span class="badge '+stcls(j.status)+'">'+esc(j.status||'Received')+'</span></td><td style="font-family:\'JetBrains Mono\',monospace;font-size:11px;">'+(parseFloat(j.finalCost)>0?'₹'+parseFloat(j.finalCost).toFixed(0):'—')+'</td></tr>';});
+    h+='</tbody></table></div>';
+  }
+  // Pending collection table
+  h+='<div style="font-family:\'Playfair Display\',serif;font-size:14px;font-weight:700;margin-bottom:9px;">📦 Pending Customer Collection ('+pendingCollection.length+')</div>';
+  if(!pendingCollection.length){h+='<div class="tbl-wrap"><div class="tbl-empty" style="color:var(--green);">✅ No devices waiting for collection.</div></div>';}
+  else{
+    h+='<div class="tbl-wrap" style="margin-bottom:16px;"><table class="dtbl"><thead><tr><th>Job ID</th><th>Customer</th><th>Phone</th><th>Device</th><th>Balance Due</th><th>Waiting Since</th></tr></thead><tbody>';
+    pendingCollection.forEach(function(j){var bal=Math.max(0,parseFloat(j.finalCost||0)-parseFloat(j.advance||0));var days=j.isoDate?Math.floor((Date.now()-new Date(j.isoDate).getTime())/86400000):0;h+='<tr onclick="openDr(\''+esc(j.jobId)+'\')" style="cursor:pointer;"><td><span class="mono">'+esc(j.jobId)+'</span></td><td>'+esc((j.firstName||'')+' '+(j.lastName||''))+'</td><td><a href="tel:+91'+esc(j.phone||'')+'" style="color:var(--gold);font-family:\'JetBrains Mono\',monospace;font-size:11px;" onclick="event.stopPropagation()">+91 '+esc(j.phone||'—')+'</a></td><td style="font-size:11px;">'+esc((j.devType||'')+' '+(j.devModel||''))+'</td><td style="font-family:\'JetBrains Mono\',monospace;font-size:11px;color:'+(bal>0?'var(--orange)':'var(--green)')+';">'+(bal>0?'₹'+bal.toFixed(0):'PAID')+'</td><td style="font-size:11px;color:var(--muted);">'+esc(j.isoDate||'—')+(days>0?' ('+days+'d)':'')+'</td></tr>';});
+    h+='</tbody></table></div>';
+  }
+  // End of day revenue summary
+  h+='<div style="font-family:\'Playfair Display\',serif;font-size:14px;font-weight:700;margin-bottom:9px;">💰 Revenue Summary — '+label+'</div>';
+  h+='<div class="card"><div class="card-body">';
+  h+=rv('Total Billed (jobs from today)','₹'+billed.toFixed(0));
+  h+=rv('Advance / Payments Collected','₹'+collected.toFixed(0));
+  h+=rv('Outstanding (balance pending)','₹'+(billed-collected).toFixed(0));
+  h+=rv('Parts Logged',''+partsUsed+' items across '+totalIn+' jobs');
+  h+='</div></div>';
+  document.getElementById('ds_content').innerHTML=h;
+}
+function printDailySummary(){
+  var dateVal=document.getElementById('ds_date').value||new Date().toISOString().split('T')[0];
+  var jobs=loadJobs().filter(function(j){return(j.isoDate||'')=== dateVal;});
+  var pendingCollection=loadJobs().filter(function(j){return j.status==='Ready';});
+  var billed=0,collected=0;
+  jobs.forEach(function(j){var c=parseFloat(j.finalCost)||0,a=parseFloat(j.advance)||0;billed+=c;collected+=Math.min(a,c);});
+  var rows=jobs.map(function(j){return'<tr><td>'+j.jobId+'</td><td>'+j.firstName+' '+j.lastName+'</td><td>'+j.devType+' '+j.devModel+'</td><td>'+j.status+'</td><td>'+(parseFloat(j.finalCost)>0?'₹'+j.finalCost:'—')+'</td></tr>';}).join('');
+  var pRows=pendingCollection.map(function(j){var bal=Math.max(0,parseFloat(j.finalCost||0)-parseFloat(j.advance||0));return'<tr><td>'+j.jobId+'</td><td>'+j.firstName+' '+j.lastName+'</td><td>+91 '+j.phone+'</td><td>'+(bal>0?'₹'+bal.toFixed(0):'PAID')+'</td></tr>';}).join('');
+  document.getElementById('printArea').innerHTML='<div style="font-family:Arial,sans-serif;font-size:11px;color:#000;padding:0;">'+
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2.5px solid #C9A84C;padding-bottom:10px;margin-bottom:14px;">'+
+    '<div style="display:flex;align-items:center;gap:10px;"><div style="width:40px;height:40px;border-radius:50%;background:#0A0A0A;border:2px solid #C9A84C;display:flex;align-items:center;justify-content:center;font-size:18px;color:#C9A84C;font-family:serif;">ॐ</div><div><div style="font-size:14px;font-weight:900;">OM SAI Apple Service Hub</div><div style="font-size:9px;color:#888;">+91-7208325405 | Borivali (E), Mumbai</div></div></div>'+
+    '<div style="text-align:right;"><div style="background:#C9A84C;color:#000;font-size:8px;font-weight:900;letter-spacing:.15em;padding:2px 10px;border-radius:3px;display:inline-block;margin-bottom:4px;">DAILY SUMMARY</div><div style="font-size:13px;font-weight:700;">'+dateVal+'</div></div></div>'+
+    '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;">'+
+    ['Jobs Today:'+jobs.length,'Billed:₹'+billed.toFixed(0),'Collected:₹'+collected.toFixed(0),'Pending Pickup:'+pendingCollection.length].map(function(x){var p=x.split(':');return'<div style="background:#fafafa;border:1px solid #e0d8c8;border-radius:4px;padding:8px;text-align:center;"><div style="font-size:8px;color:#999;text-transform:uppercase;letter-spacing:.08em;">'+p[0]+'</div><div style="font-size:16px;font-weight:900;color:#C9A84C;margin-top:3px;">'+p[1]+'</div></div>';}).join('')+
+    '</div>'+
+    (jobs.length?'<div style="font-size:9px;font-weight:700;color:#C9A84C;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">Jobs Received Today</div><table style="width:100%;border-collapse:collapse;font-size:10px;margin-bottom:12px;"><thead><tr style="background:#fff8e1;"><th style="padding:5px 7px;border:1px solid #e8e0cc;text-align:left;">Job ID</th><th style="padding:5px 7px;border:1px solid #e8e0cc;text-align:left;">Customer</th><th style="padding:5px 7px;border:1px solid #e8e0cc;text-align:left;">Device</th><th style="padding:5px 7px;border:1px solid #e8e0cc;text-align:left;">Status</th><th style="padding:5px 7px;border:1px solid #e8e0cc;text-align:right;">Amount</th></tr></thead><tbody>'+rows+'</tbody></table>':'<div style="font-size:10px;color:#888;margin-bottom:12px;">No jobs taken in today.</div>')+
+    (pendingCollection.length?'<div style="font-size:9px;font-weight:700;color:#C9A84C;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">Pending Customer Collection</div><table style="width:100%;border-collapse:collapse;font-size:10px;margin-bottom:12px;"><thead><tr style="background:#fff8e1;"><th style="padding:5px 7px;border:1px solid #e8e0cc;text-align:left;">Job ID</th><th style="padding:5px 7px;border:1px solid #e8e0cc;text-align:left;">Customer</th><th style="padding:5px 7px;border:1px solid #e8e0cc;text-align:left;">Phone</th><th style="padding:5px 7px;border:1px solid #e8e0cc;text-align:right;">Balance</th></tr></thead><tbody>'+pRows+'</tbody></table>':'<div style="font-size:10px;color:#2E7D32;font-weight:700;margin-bottom:12px;">✓ No devices pending collection.</div>')+
+    '<div style="border-top:1px solid #eee;padding-top:8px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:10px;"><div><span style="color:#888;">Total Billed:</span> <strong>₹'+billed.toFixed(0)+'</strong></div><div><span style="color:#888;">Collected:</span> <strong>₹'+collected.toFixed(0)+'</strong></div><div><span style="color:#888;">Outstanding:</span> <strong>₹'+(billed-collected).toFixed(0)+'</strong></div></div>'+
+    '<div style="text-align:center;border-top:1px solid #eee;padding-top:7px;margin-top:10px;font-size:8px;color:#aaa;">OM SAI Apple Service Hub · Daily Summary · Generated '+new Date().toLocaleString('en-IN')+'</div></div>';
+  setTimeout(printSR,200);
+}
+
+/* ── ANALYTICS ── */
+function renderAnalytics(){
+  var jobs=loadJobs(),byS={Received:0,Diagnosed:0,Repairing:0,Ready:0,Delivered:0},byD={},rev=0,revJ=0;
+  jobs.forEach(function(j){var s=j.status||'Received';if(byS[s]!==undefined)byS[s]++;else byS.Received++;var dt=j.devType||'Other';byD[dt]=(byD[dt]||0)+1;var c=parseFloat(j.finalCost)||0;if(c>0){rev+=c;revJ++;}});
+  var del=byS.Delivered,tot=jobs.length,rate=tot>0?Math.round(del/tot*100):0,avg=revJ>0?rev/revJ:0;
+  document.getElementById('an_stats').innerHTML=sc('sc-gold','📊',tot,'Total Jobs','All time')+sc('sc-g','✅',rate+'%','Completion',del+' delivered')+sc('sc-b','💰','₹'+fmt(rev),'Revenue',revJ+' billed')+sc('sc-o','📐','₹'+Math.round(avg),'Avg Job Value','per billed job')+sc('sc-p','🔧',byS.Repairing+byS.Received+byS.Diagnosed,'In Progress','Active queue');
+  var cl={Received:'#3498DB',Diagnosed:'#F39C12',Repairing:'#C9A84C',Ready:'#2ECC71',Delivered:'#555'};
+  var mxS=Math.max.apply(null,Object.values(byS).concat([1]));
+  var out='<div class="card"><div class="card-hd"><div class="card-ico">📊</div><div class="card-ttl">Jobs by Status</div></div><div class="card-body"><div class="bar-wrap">';
+  Object.keys(byS).forEach(function(k){var p=Math.round(byS[k]/mxS*100);out+='<div class="bar-row"><div class="bar-name">'+k+'</div><div class="bar-track"><div class="bar-fill" style="width:'+p+'%;background:'+cl[k]+'"></div></div><div class="bar-val">'+byS[k]+'</div></div>';});
+  out+='</div></div></div>';
+  var dK=Object.keys(byD).sort(function(a,b){return byD[b]-byD[a];});var dCl=['#C9A84C','#3498DB','#2ECC71','#F39C12','#9B59B6','#E74C3C'];var mxD=dK.length?byD[dK[0]]:1;
+  out+='<div class="card"><div class="card-hd"><div class="card-ico">📱</div><div class="card-ttl">Jobs by Device Type</div></div><div class="card-body"><div class="bar-wrap">';
+  dK.slice(0,6).forEach(function(k,i){var p=Math.round(byD[k]/mxD*100);out+='<div class="bar-row"><div class="bar-name" style="font-size:10px;">'+esc(k)+'</div><div class="bar-track"><div class="bar-fill" style="width:'+p+'%;background:'+dCl[i%dCl.length]+'"></div></div><div class="bar-val">'+byD[k]+'</div></div>';});
+  out+='</div></div></div>';
+  var mR={};jobs.forEach(function(j){var c=parseFloat(j.finalCost)||0;if(!c||!j.isoDate)return;var k=j.isoDate.substring(0,7);mR[k]=(mR[k]||0)+c;});var mK=Object.keys(mR).sort().slice(-6);
+  out+='<div class="card"><div class="card-hd"><div class="card-ico">💰</div><div class="card-ttl">Monthly Revenue</div></div><div class="card-body">';
+  if(mK.length){var mxR=Math.max.apply(null,mK.map(function(k){return mR[k];}).concat([1]));out+='<div class="bar-wrap">';mK.forEach(function(k){var p=Math.round(mR[k]/mxR*100),mo=new Date(k+'-01').toLocaleDateString('en-IN',{month:'short',year:'2-digit'});out+='<div class="bar-row"><div class="bar-name">'+mo+'</div><div class="bar-track"><div class="bar-fill" style="width:'+p+'%;background:var(--gold)"></div></div><div class="bar-val" style="font-size:9px;">₹'+fmt(mR[k])+'</div></div>';});out+='</div>';}
+  else out+='<div style="color:var(--muted);font-size:12px;text-align:center;padding:20px;">No billing data yet</div>';
+  out+='</div></div>';
+  var iC={};jobs.forEach(function(j){var is=(j.issue||'').split(/[,;.\n]/)[0].trim().toLowerCase().substring(0,50);if(is.length>4)iC[is]=(iC[is]||0)+1;});var topI=Object.keys(iC).sort(function(a,b){return iC[b]-iC[a];}).slice(0,6);
+  out+='<div class="card"><div class="card-hd"><div class="card-ico">⚠️</div><div class="card-ttl">Common Issues</div></div><div class="card-body">';
+  if(topI.length){var mxI=iC[topI[0]]||1;out+='<div class="bar-wrap">';topI.forEach(function(k){var p=Math.round(iC[k]/mxI*100);out+='<div class="bar-row"><div class="bar-name" style="font-size:9px;text-transform:capitalize;">'+esc(k.substring(0,14))+'</div><div class="bar-track"><div class="bar-fill" style="width:'+p+'%;background:#9B59B6"></div></div><div class="bar-val">'+iC[k]+'</div></div>';});out+='</div>';}
+  else out+='<div style="color:var(--muted);font-size:12px;text-align:center;padding:20px;">Not enough data</div>';
+  out+='</div></div>';
+  document.getElementById('an_charts').innerHTML=out;
+}
+
+/* ── CUSTOMERS ── */
+function renderCustomers(){
+  var jobs=loadJobs(),q=(document.getElementById('cu_search').value||'').toLowerCase(),cm={};
+  jobs.forEach(function(j){var key=(j.phone||'').replace(/\D/g,'')||((j.firstName||'')+(j.lastName||''));if(!key)return;if(!cm[key])cm[key]={fn:j.firstName,ln:j.lastName,ph:j.phone,em:j.email,jobs:[]};cm[key].jobs.push(j);});
+  var custs=Object.values(cm);
+  if(q)custs=custs.filter(function(c){return(c.fn||'').toLowerCase().includes(q)||(c.ln||'').toLowerCase().includes(q)||(c.ph||'').includes(q);});
+  custs.sort(function(a,b){return b.jobs.length-a.jobs.length;});
+  if(!custs.length){document.getElementById('cu_list').innerHTML='<div style="text-align:center;padding:50px;color:var(--muted);"><div style="font-size:40px;opacity:.2;margin-bottom:10px;">👥</div>No customers found</div>';return;}
+  var h='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px;">';
+  custs.forEach(function(c){var nm=(c.fn||'')+(c.ln?' '+c.ln:''),init=(c.fn||'?').charAt(0).toUpperCase(),devs=[...new Set(c.jobs.map(function(j){return j.devType||'';}).filter(Boolean))],spend=c.jobs.reduce(function(s,j){return s+(parseFloat(j.finalCost)||0);},0),lastJob=c.jobs[c.jobs.length-1];
+    h+='<div class="card" style="margin-bottom:0;cursor:pointer;" onclick="openDr(\''+esc(lastJob&&lastJob.jobId||'')+'\')">';
+    h+='<div class="card-body" style="padding:14px 15px;"><div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;"><div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--dark5),var(--dark4));border:1px solid rgba(201,168,76,.25);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--gold);flex-shrink:0;">'+init+'</div><div><div style="font-size:13px;font-weight:600;">'+esc(nm)+'</div><div style="font-size:10px;color:var(--muted);font-family:\'JetBrains Mono\',monospace;">'+esc(c.ph||'—')+'</div></div></div>';
+    h+='<div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:11px;color:var(--muted);">'+c.jobs.length+' job'+(c.jobs.length===1?'':'s')+'</span><span style="font-family:\'JetBrains Mono\',monospace;font-size:13px;color:var(--gold);">'+(spend>0?'₹'+spend.toFixed(0):'—')+'</span></div>';
+    if(devs.length)h+='<div style="margin-top:8px;display:flex;gap:4px;flex-wrap:wrap;">'+devs.slice(0,3).map(function(d){return'<span style="font-size:9px;background:rgba(201,168,76,.07);border:1px solid rgba(201,168,76,.18);color:var(--gold);padding:2px 7px;border-radius:100px;">'+esc(d)+'</span>';}).join('')+'</div>';
+    h+='</div></div>';});
+  h+='</div>';
+  document.getElementById('cu_list').innerHTML=h;
+}
+
+/* ── INVENTORY ── */
+function renderInventory(){
+  var jobs=loadJobs(),pm={};
+  jobs.forEach(function(j){(j.partsUsed||[]).forEach(function(p){if(!p.name||!p.name.trim())return;var k=p.name.trim().toLowerCase();if(!pm[k])pm[k]={name:p.name.trim(),count:0,val:0};pm[k].count+=parseInt(p.qty)||1;pm[k].val+=(parseFloat(p.price)||0)*(parseInt(p.qty)||1);});});
+  var parts=Object.values(pm).sort(function(a,b){return b.count-a.count;});
+  if(!parts.length){document.getElementById('inv_content').innerHTML='<div style="text-align:center;padding:50px;color:var(--muted);"><div style="font-size:40px;opacity:.2;margin-bottom:10px;">🔩</div>No parts data yet.<br>Parts will appear once technicians log them.</div>';return;}
+  var h='<div class="tbl-wrap"><table class="dtbl"><thead><tr><th>Part Name</th><th>Times Used</th><th>Total Value</th></tr></thead><tbody>';
+  parts.forEach(function(p){h+='<tr><td style="font-weight:500;">'+esc(p.name)+'</td><td><span class="mono">'+p.count+'×</span></td><td class="mono">'+(p.val>0?'₹'+p.val.toFixed(0):'—')+'</td></tr>';});
+  h+='</tbody></table></div>';
+  document.getElementById('inv_content').innerHTML=h;
+}
+
+/* ── REPORTS ── */
+function renderReports(){
+  var r=[{i:'📊',t:'Job Summary',d:'All jobs by status'},{ i:'💰',t:'Revenue Report',d:'Monthly billing summary'},{i:'👥',t:'Customer Report',d:'Customer history &amp; spend'},{i:'🔩',t:'Parts Usage',d:'All parts used across jobs'},{i:'📋',t:'Pending Jobs',d:'All undelivered jobs'},{i:'📤',t:'Export JSON',d:'Full data backup file'}];
+  var fns=['rptSummary','rptRevenue','rptCustomers','rptParts','rptPending','exportData'];
+  document.getElementById('rpt_grid').innerHTML=r.map(function(x,i){return'<div class="card" style="cursor:pointer;display:flex;align-items:center;gap:13px;padding:16px 18px;margin-bottom:0;" onclick="'+fns[i]+'()"><div style="font-size:22px;width:40px;height:40px;border-radius:10px;background:rgba(201,168,76,.07);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;">'+x.i+'</div><div><div style="font-size:13px;font-weight:600;margin-bottom:2px;">'+x.t+'</div><div style="font-size:11px;color:var(--muted);">'+x.d+'</div></div><span style="margin-left:auto;color:var(--muted);">↓</span></div>';}).join('');
+}
+function dlTxt(txt,fn){var b=new Blob([txt],{type:'text/plain'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=fn;a.click();toast('Downloaded',false);}
+function rptSummary(){var j=loadJobs(),c={};j.forEach(function(x){var s=x.status||'Received';c[s]=(c[s]||0)+1;});var l=['JOB SUMMARY — OM SAI Apple Service Hub','Generated: '+new Date().toLocaleString(),'','Status Breakdown:'];Object.keys(c).forEach(function(k){l.push('  '+k+': '+c[k]);});l.push('  TOTAL: '+j.length);dlTxt(l.join('\n'),'job-summary.txt');}
+function rptRevenue(){var j=loadJobs(),m={};j.forEach(function(x){var k=x.isoDate?x.isoDate.substring(0,7):'Unknown';if(!m[k])m[k]={b:0,c:0};var co=parseFloat(x.finalCost)||0,ad=parseFloat(x.advance)||0;m[k].b+=co;m[k].c+=Math.min(ad,co);});var l=['REVENUE REPORT — OM SAI Apple Service Hub','Generated: '+new Date().toLocaleString(),''],tb=0,tc=0;Object.keys(m).sort().forEach(function(k){l.push(k+': Billed ₹'+m[k].b.toFixed(0)+' | Collected ₹'+m[k].c.toFixed(0));tb+=m[k].b;tc+=m[k].c;});l.push('','TOTAL Billed: ₹'+tb.toFixed(0),'TOTAL Collected: ₹'+tc.toFixed(0),'Outstanding: ₹'+(tb-tc).toFixed(0));dlTxt(l.join('\n'),'revenue.txt');}
+function rptCustomers(){var j=loadJobs(),c={};j.forEach(function(x){var k=(x.phone||'').replace(/\D/g,'')||((x.firstName||'')+(x.lastName||''));if(!k)return;if(!c[k])c[k]={n:(x.firstName||'')+' '+(x.lastName||''),p:x.phone||'',jj:[]};c[k].jj.push(x.jobId+'('+x.status+')');});var l=['CUSTOMER REPORT — OM SAI Apple Service Hub','Generated: '+new Date().toLocaleString(),''];Object.values(c).forEach(function(x){l.push(x.n+' | '+x.p+' | Jobs: '+x.jj.join(', '));});dlTxt(l.join('\n'),'customers.txt');}
+function rptParts(){var j=loadJobs(),pm={};j.forEach(function(x){(x.partsUsed||[]).forEach(function(p){if(!p.name||!p.name.trim())return;pm[p.name.trim()]=(pm[p.name.trim()]||0)+(parseInt(p.qty)||1);});});var l=['PARTS REPORT — OM SAI Apple Service Hub','Generated: '+new Date().toLocaleString(),''];Object.keys(pm).sort(function(a,b){return pm[b]-pm[a];}).forEach(function(k){l.push(pm[k]+'×  '+k);});dlTxt(l.join('\n'),'parts.txt');}
+function rptPending(){var j=loadJobs().filter(function(x){return x.status!=='Delivered';}),l=['PENDING JOBS — OM SAI Apple Service Hub','Generated: '+new Date().toLocaleString(),'Total: '+j.length,''];j.forEach(function(x){l.push(x.jobId+' | '+(x.firstName||'')+' '+(x.lastName||'')+' | '+(x.devType||'')+' '+(x.devModel||'')+' | '+x.status+(x.phone?' | +91 '+x.phone:''));});dlTxt(l.join('\n'),'pending.txt');}
+function exportData(){var b=new Blob([JSON.stringify(loadJobs(),null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='omsai-backup-'+Date.now()+'.json';a.click();toast('Exported',false);}
+
+/* ── SETTINGS ── */
+function renderSettings(){var j=loadJobs();document.getElementById('set_total').textContent=j.length;document.getElementById('set_size').textContent=Math.round((localStorage.getItem(STORE)||'').length/1024*10)/10+' KB';}
+function clearAll(){
+  if(!confirm('⚠️ Delete ALL '+loadJobs().length+' records? This CANNOT be undone!'))return;
+  var jobs=loadJobs();
+  if(window._fb) jobs.forEach(function(j){window._fb.deleteJob(j.jobId);});
+  localStorage.removeItem(STORE);
+  refreshAll();renderSettings();toast('All data cleared',true);
+}
+
+/* ── DRAWER ── */
+function openDr(jobId){
+  var j=loadJobs().find(function(x){return x.jobId===jobId;});if(!j)return;
+  document.getElementById('dr_id').textContent=j.jobId||'—';
+  document.getElementById('dr_date').textContent='Received: '+(j.isoDate||j.date||'—');
+  var cost=parseFloat(j.finalCost)||0,adv=parseFloat(j.advance)||0,bal=Math.max(0,cost-adv);
+  var h='<div style="margin-bottom:10px;"><span class="badge '+stcls(j.status)+'">'+esc(j.status||'Received')+'</span></div>';
+  h+='<div class="d-sec">Customer</div>';
+  h+=dr2('Name',esc((j.firstName||'')+' '+(j.lastName||'')));
+  h+=dr2('Phone',j.phone?'<a href="tel:+91'+esc(j.phone)+'" style="color:var(--gold)">+91 '+esc(j.phone)+'</a>':'—');
+  if(j.email)h+=dr2('Email',esc(j.email));
+  h+='<div class="d-sec">Device</div>';
+  h+=dr2('Type',esc(j.devType||'—'));h+=dr2('Model',esc(j.devModel||'—'));
+  if(j.serial)h+=dr2('Serial',esc(j.serial));
+  h+='<div class="d-sec">Complaint</div><div style="font-size:12px;line-height:1.6;background:var(--dark4);border-radius:7px;padding:9px 11px;margin-bottom:10px;">'+esc(j.issue||'—')+'</div>';
+  if(j.diagnosis)h+='<div class="d-sec">Diagnosis</div><div style="font-size:12px;line-height:1.6;background:var(--dark4);border-radius:7px;padding:9px 11px;margin-bottom:10px;">'+esc(j.diagnosis)+'</div>';
+  var parts=(j.partsUsed||[]).filter(function(p){return p.name&&p.name.trim();});
+  if(parts.length){h+='<div class="d-sec">Parts Used</div>';parts.forEach(function(p){h+='<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border2);font-size:12px;"><span>'+esc(p.name)+(p.qty&&p.qty!='1'?' ×'+p.qty:'')+'</span><span class="mono">'+(parseFloat(p.price)>0?'₹'+parseFloat(p.price).toFixed(0):'—')+'</span></div>';});}
+  h+='<div class="d-sec">Financials</div>';
+  h+=dr2('Final Cost',cost>0?'₹'+cost.toFixed(0):'Not set');h+=dr2('Advance','₹'+adv.toFixed(0));
+  h+=dr2('Balance',bal>0?'<span style="color:var(--orange)">₹'+bal.toFixed(0)+'</span>':'<span style="color:var(--green)">✓ Paid</span>');
+  if(j.payMode)h+=dr2('Pay Mode',esc(j.payMode));
+  h+='<div class="d-sec">Staff</div>'+dr2('Technician',esc(j.techName||j.tech||'—'));
+  h+='<div style="margin-top:14px;display:flex;gap:7px;flex-wrap:wrap;">';
+  h+='<button class="btn btn-gold btn-sm" onclick="openEdit(\''+esc(j.jobId)+'\')">✏️ Edit Details</button>';
+  h+='<button class="btn btn-outline btn-sm" onclick="closeDr();nav(\'techpanel\');setTimeout(function(){selectJob(\''+esc(j.jobId)+'\');},80)">🔧 Tech Panel</button>';
+  h+='<button class="btn btn-outline btn-sm" onclick="closeDr();nav(\'invoice\');setTimeout(function(){document.getElementById(\'inv_input\').value=\''+esc(j.jobId)+'\';},50)">🧾 Invoice</button>';
+  var d=(j.phone||'').replace(/\D/g,'');if(d.length>=10)h+='<a href="https://wa.me/91'+d.slice(-10)+'" target="_blank" class="btn btn-green btn-sm">💬 WhatsApp</a>';
+  h+='</div>';
+  document.getElementById('dr_body').innerHTML=h;
+  document.getElementById('drawer').classList.add('open');
+  document.getElementById('overlay').classList.add('open');
+}
+function dr2(l,v){return'<div class="drow"><div class="dl">'+l+'</div><div class="dv">'+v+'</div></div>';}
+function closeDr(){document.getElementById('drawer').classList.remove('open');document.getElementById('overlay').classList.remove('open');}
+
+/* ── CLOCK & TOAST ── */
+function startClock(){(function tick(){var n=new Date(),h=n.getHours(),m=n.getMinutes(),s=n.getSeconds();document.getElementById('sbClk').textContent=(h<10?'0':'')+h+':'+(m<10?'0':'')+m+':'+(s<10?'0':'')+s;setTimeout(tick,1000);})();}
+function toast(msg,isErr){var t=document.getElementById('toast');t.textContent=msg;t.className=isErr?'err':'';t.classList.add('show');setTimeout(function(){t.classList.remove('show');},3000);}
+</script>
+</body>
+</html>
