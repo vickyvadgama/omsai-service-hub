@@ -182,7 +182,7 @@ body{background:#FFFFFF;color:#111111;font-family:'DM Sans',sans-serif;overflow-
 .sb-clk{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);text-align:center;}
 /* MAIN */
 .main{margin-left:var(--sb);flex:1;display:flex;flex-direction:column;min-height:100vh;overflow:hidden;}
-.topbar{background:rgba(9,9,9,.96);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:10px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-shrink:0;}
+.topbar{background:#FFFFFF;backdrop-filter:none;border-bottom:1.5px solid rgba(201,168,76,.3);padding:10px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-shrink:0;}
 .tb-ttl{font-family:'Playfair Display',serif;font-size:17px;font-weight:700;}
 .tb-ttl span{color:var(--gold);}
 .tb-right{display:flex;align-items:center;gap:8px;}
@@ -193,7 +193,7 @@ body{background:#FFFFFF;color:#111111;font-family:'DM Sans',sans-serif;overflow-
 .tb-btn:hover{border-color:var(--gold);color:var(--gold);}
 /* PAGES */
 .page{display:none;flex:1;overflow-y:auto;padding:20px 24px 60px;}
-.page.on{display:block;}
+.page.on{display:block;animation:pgFade .18s ease-out;}
 .page-hd{margin-bottom:18px;}
 .page-ttl{font-family:'Playfair Display',serif;font-size:20px;font-weight:900;}
 .page-ttl span{background:linear-gradient(135deg,var(--gold-light),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
@@ -341,9 +341,11 @@ body{background:#FFFFFF;color:#111111;font-family:'DM Sans',sans-serif;overflow-
 .bar-fill{height:100%;border-radius:100px;transition:width .7s ease;}
 .bar-val{font-size:9.5px;font-family:'JetBrains Mono',monospace;color:var(--gold);min-width:28px;}
 /* SUCCESS OVERLAY */
-#successOverlay{display:none;position:fixed;inset:0;z-index:300;background:rgba(9,9,9,.96);align-items:center;justify-content:center;flex-direction:column;overflow-y:auto;padding:24px;}
-#successOverlay.show{display:flex;animation:fdi .4s;}
+#successOverlay{display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.4);align-items:center;justify-content:center;flex-direction:column;overflow-y:auto;padding:24px;}
+#successOverlay.show{display:flex;animation:fdi .25s;}
 @keyframes fdi{from{opacity:0}to{opacity:1}}
+@keyframes pgFade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{from{transform:scale(0.7)}to{transform:scale(1)}}
 .suc-ico{font-size:54px;margin-bottom:14px;}
 .suc-ttl{font-family:'Playfair Display',serif;font-size:30px;color:var(--gold);margin-bottom:8px;}
 .suc-id{font-family:'JetBrains Mono',monospace;font-size:18px;background:var(--dark3);border:1px solid var(--border);padding:9px 22px;border-radius:9px;margin-bottom:12px;}
@@ -386,7 +388,7 @@ body{background:#FFFFFF;color:#111111;font-family:'DM Sans',sans-serif;overflow-
 .rev-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border2);font-size:12px;}
 .rev-row:last-child{border-bottom:none;}
 /* TOAST */
-#toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--dark3);border:1px solid var(--gold);color:var(--white);padding:10px 20px;border-radius:9px;font-size:12px;font-weight:600;z-index:9999;transition:transform .3s cubic-bezier(.34,1.56,.64,1),opacity .3s;opacity:0;pointer-events:none;white-space:nowrap;}
+#toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(80px);background:#FFFFFF;border:1.5px solid rgba(201,168,76,.4);color:#111111;padding:10px 20px;border-radius:9px;font-size:12px;font-weight:600;z-index:9999;transition:transform .3s cubic-bezier(.34,1.56,.64,1),opacity .3s;opacity:0;pointer-events:none;white-space:nowrap;box-shadow:0 4px 24px rgba(0,0,0,.12);}
 #toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
 #toast.err{border-color:var(--red);color:var(--red);}
 /* DRAWER */
@@ -707,7 +709,7 @@ body{background:#FFFFFF;color:#111111;font-family:'DM Sans',sans-serif;overflow-
       <div class="fbar">
         <input class="sinp" id="aj_search" placeholder="🔍 Search by Job ID, name, phone, device…" oninput="renderAllJobs()">
         <select class="fsel" id="aj_status" onchange="renderAllJobs()"><option value="">All Statuses</option><option>Received</option><option>Diagnosed</option><option>Repairing</option><option>Ready</option><option>Delivered</option></select>
-        <select class="fsel" id="aj_device" onchange="renderAllJobs()"><option value="">All Devices</option><option>iPhone</option><option>iPad</option><option>MacBook</option><option>iMac</option><option>Apple Watch</option><option>AirPods</option><option>Other Apple Device</option></select>
+        <select class="fsel" id="aj_device" onchange="renderAllJobs()"><option value="">All Devices</option><option>iPhone</option><option>iPad</option><option>MacBook</option><option>iMac</option><option>Apple Watch</option><option>AirPods</option><option>Other Android Device</option><option>Data Recovery</option></select>
         <button class="btn btn-outline btn-sm" onclick="clearAJFilters()">✕ Clear</button>
       </div>
       <div id="aj_table"></div>
@@ -755,16 +757,23 @@ body{background:#FFFFFF;color:#111111;font-family:'DM Sans',sans-serif;overflow-
           <div class="card-hd"><div class="card-ico">👤</div><div><div class="card-ttl">Customer Information</div><div class="card-sub2">Fields marked * are mandatory</div></div></div>
           <div class="card-body">
             <div class="frow"><div class="field"><label>First Name <span class="req">*</span></label><input type="text" id="j_fn" placeholder="e.g. Rahul"><div class="errmsg" id="e_fn">Required</div></div><div class="field"><label>Last Name <span class="req">*</span></label><input type="text" id="j_ln" placeholder="e.g. Sharma"><div class="errmsg" id="e_ln">Required</div></div></div>
-            <div class="frow"><div class="field"><label>Email <span class="req">*</span></label><input type="email" id="j_em" placeholder="rahul@example.com"><div class="errmsg" id="e_em">Valid email required</div></div><div class="field"><label>Phone <span class="req">*</span></label><div class="ph-wrap"><div class="ph-pre">+91</div><input type="tel" id="j_ph" placeholder="98765 43210" maxlength="10"></div><div class="errmsg" id="e_ph">10-digit number required</div></div></div>
+            <div class="frow"><div class="field"><label>Email <span class="req">*</span></label><input type="email" id="j_em" placeholder="rahul@example.com"><div class="errmsg" id="e_em">Valid email required</div></div><div class="field"><label>Phone <span class="req">*</span></label><div class="ph-wrap"><div class="ph-pre">+91</div><input type="tel" id="j_ph" placeholder="98765 43210" maxlength="10" oninput="autoFillCustomer(this.value)"></div><div class="errmsg" id="e_ph">10-digit number required</div></div></div>
             <div class="frow"><div class="field"><label>Alternate Phone</label><div class="ph-wrap"><div class="ph-pre">+91</div><input type="tel" id="j_ap" placeholder="Optional" maxlength="10"></div></div><div class="field"><label>Address / Area</label><input type="text" id="j_addr" placeholder="e.g. Borivali West"></div></div>
             <div class="frow"><div class="field"><label>GST Number</label><input type="text" id="j_gst" placeholder="Optional"></div><div class="field"><label>Referred By / Source</label><select id="j_src"><option value="">Select…</option><option>Walk-in</option><option>Google Search</option><option>Instagram</option><option>Facebook</option><option>Customer Referral</option><option>JustDial</option><option>WhatsApp</option><option>Other</option></select></div></div>
             <div class="field" style="max-width:200px;"><label>Advance Collected (₹)</label><input type="number" id="j_adv" placeholder="0 if none"></div>
+            <div class="field" style="max-width:260px;">
+              <label>Priority</label>
+              <label id="urgentToggle" style="display:flex;align-items:center;gap:10px;background:rgba(231,76,60,0.05);border:1.5px solid rgba(231,76,60,0.2);border-radius:9px;padding:10px 14px;cursor:pointer;margin-top:6px;transition:all .2s;">
+                <input type="checkbox" id="j_urgent" style="width:16px;height:16px;accent-color:#e53935;" onchange="var w=document.getElementById('urgentToggle');w.style.borderColor=this.checked?'#e53935':'rgba(231,76,60,0.2)';w.style.background=this.checked?'rgba(231,76,60,0.08)':'rgba(231,76,60,0.05)';">
+                <div><div style="font-size:12px;font-weight:700;color:#c62828;">🚨 Urgent / Same-Day</div><div style="font-size:10px;color:#888;margin-top:1px;">Prioritise this job in the queue</div></div>
+              </label>
+            </div>
           </div>
         </div>
         <div class="card">
           <div class="card-hd"><div class="card-ico">📱</div><div><div class="card-ttl">Device Information</div></div></div>
           <div class="card-body">
-            <div class="frow r3"><div class="field"><label>Device Type <span class="req">*</span></label><select id="j_dt"><option value="">Select…</option><option>iPhone</option><option>iPad</option><option>MacBook</option><option>iMac</option><option>Mac Pro</option><option>Apple Watch</option><option>AirPods</option><option>iPod</option><option>Other Apple Device</option></select><div class="errmsg" id="e_dt">Please select</div></div><div class="field"><label>Model <span class="req">*</span></label><input type="text" id="j_dm" placeholder="e.g. iPhone 15 Pro Max"><div class="errmsg" id="e_dm">Model required</div></div><div class="field"><label>Serial / IMEI</label><input type="text" id="j_sn" placeholder="Optional"></div></div>
+            <div class="frow r3"><div class="field"><label>Device Type <span class="req">*</span></label><select id="j_dt"><option value="">Select…</option><option>iPhone</option><option>iPad</option><option>MacBook</option><option>iMac</option><option>Mac Pro</option><option>Apple Watch</option><option>AirPods</option><option>iPod</option><option>Other Android Device</option><option>Data Recovery</option></select><div class="errmsg" id="e_dt">Please select</div></div><div class="field"><label>Model <span class="req">*</span></label><input type="text" id="j_dm" placeholder="e.g. iPhone 15 Pro Max"><div class="errmsg" id="e_dm">Model required</div></div><div class="field"><label>Serial / IMEI</label><input type="text" id="j_sn" placeholder="Optional"></div></div>
             <div class="frow r3"><div class="field"><label>Storage</label><select id="j_stor"><option value="">Select…</option><option>64 GB</option><option>128 GB</option><option>256 GB</option><option>512 GB</option><option>1 TB</option><option>N/A</option></select></div><div class="field"><label>Color / Finish</label><input type="text" id="j_col" placeholder="e.g. Midnight Black"></div><div class="field"><label>Passcode</label><input type="text" id="j_pc" placeholder="For diagnostic access"></div></div>
             <div class="field" style="margin-bottom:12px;"><label>Device Condition</label><div class="chips" style="margin-top:7px;"><div class="chip" onclick="pickChip(this,'Good')">Good</div><div class="chip" onclick="pickChip(this,'Minor Scratches')">Minor Scratches</div><div class="chip" onclick="pickChip(this,'Cracked Screen')">Cracked Screen</div><div class="chip" onclick="pickChip(this,'Water Damage')">Water Damage</div><div class="chip" onclick="pickChip(this,'Bent / Deformed')">Bent / Deformed</div><div class="chip" onclick="pickChip(this,'Previously Repaired')">Previously Repaired</div><div class="chip" onclick="pickChip(this,'Dead / Not Powering On')">Dead / Not Powering On</div></div><input type="hidden" id="j_cond" value="Not specified"></div>
             <div class="field" style="margin-bottom:12px;"><label>Issue Description <span class="req">*</span></label><textarea id="j_issue" placeholder="Describe the customer's complaint in detail…" style="min-height:90px;"></textarea><div class="errmsg" id="e_issue">Please describe the issue</div></div>
@@ -784,9 +793,9 @@ body{background:#FFFFFF;color:#111111;font-family:'DM Sans',sans-serif;overflow-
           </div>
         </div>
         <div class="card">
-          <div class="card-hd"><div class="card-ico">🔧</div><div><div class="card-ttl">Technician &amp; Warranty</div></div></div>
+          <div class="card-hd"><div class="card-ico">🔧</div><div><div class="card-ttl">Assigned Technician</div></div></div>
           <div class="card-body">
-            <div class="frow"><div class="field"><label>Assigned Technician</label><input type="text" id="j_tech" value="Vinayak" oninput="document.getElementById('j_techDisp').textContent=this.value.trim()||'Vinayak'"></div><div class="field"><label>Warranty on Repair</label><select id="j_war"><option value="">Select warranty…</option><option>No Warranty</option><option>7 Days</option><option>15 Days</option><option>30 Days</option><option>60 Days</option><option>90 Days</option><option>6 Months</option><option>1 Year</option></select></div></div>
+            <div class="frow"><div class="field"><label>Assigned Technician</label><input type="text" id="j_tech" value="Vinayak" oninput="document.getElementById('j_techDisp').textContent=this.value.trim()||'Vinayak'"></div></div>
           </div>
         </div>
         <div class="card">
@@ -862,6 +871,10 @@ body{background:#FFFFFF;color:#111111;font-family:'DM Sans',sans-serif;overflow-
 
     <!-- ══════ ANALYTICS ══════ -->
     <div class="page" id="page-analytics">
+      <div class="page-hd"><div class="page-ttl">Business <span>Analytics</span></div><div class="page-sub">Performance metrics and repair intelligence</div></div>
+      <div style="margin-bottom:16px;"><div class="card"><div class="card-hd"><div class="card-ico">🛡️</div><div class="card-ttl">Active Warranty Jobs</div><div class="card-sub2">Delivered jobs still within warranty period</div></div><div class="card-body" id="warranty_list" style="max-height:220px;overflow-y:auto;"></div></div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:16px;" id="an_stats"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;" id="an_charts"></div>
       <div class="page-hd"><div class="page-ttl">Business <span>Analytics</span></div><div class="page-sub">Revenue, device trends and performance insights</div></div>
       <div class="stats-row" id="an_stats"></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;" id="an_charts"></div>
@@ -908,6 +921,7 @@ body{background:#FFFFFF;color:#111111;font-family:'DM Sans',sans-serif;overflow-
             <div class="set-row"><div><div class="set-lbl">Total Job Records</div></div><span id="set_total" style="font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;color:var(--gold);">—</span></div>
             <div class="set-row"><div><div class="set-lbl">Storage Used</div><div class="set-desc">Browser LocalStorage</div></div><span id="set_size" style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--mid);">—</span></div>
             <div class="set-row"><div><div class="set-lbl">Export All Data</div><div class="set-desc">Download full backup as JSON</div></div><button class="btn btn-outline btn-sm" onclick="exportData()">⬇ Export</button></div>
+            <div class="set-row"><div><div class="set-lbl">Change My Password</div><div class="set-desc">Update your login password</div></div><button class="btn btn-outline btn-sm" onclick="openChangePass()">🔑 Change Password</button></div>
             <div class="set-row"><div><div class="set-lbl" style="color:var(--red);">Clear All Data</div><div class="set-desc">Permanently delete all records</div></div><button class="btn btn-red btn-sm" onclick="clearAll()">⚠ Delete All</button></div>
           </div></div>
         </div>
@@ -945,7 +959,7 @@ body{background:#FFFFFF;color:#111111;font-family:'DM Sans',sans-serif;overflow-
       <div class="frow"><div class="field"><label>Alt Phone</label><input type="tel" id="em_ap" class="pts-inp" style="border-radius:8px;width:100%;" maxlength="10"></div><div class="field"><label>Address</label><input type="text" id="em_addr" class="pts-inp" style="border-radius:8px;width:100%;"></div></div>
       <div class="frow r1"><div class="field"><label>GST Number</label><input type="text" id="em_gst" class="pts-inp" style="border-radius:8px;width:100%;max-width:300px;" placeholder="e.g. 27AABCU9603R1ZX"></div></div>
       <div style="font-size:10px;font-weight:700;color:var(--gold);letter-spacing:.1em;text-transform:uppercase;margin:14px 0 10px;">Device Details</div>
-      <div class="frow r3"><div class="field"><label>Device Type</label><select id="em_dt" class="pts-inp" style="border-radius:8px;width:100%;appearance:none;"><option>iPhone</option><option>iPad</option><option>MacBook</option><option>iMac</option><option>Mac Pro</option><option>Apple Watch</option><option>AirPods</option><option>iPod</option><option>Other Apple Device</option></select></div><div class="field"><label>Model</label><input type="text" id="em_dm" class="pts-inp" style="border-radius:8px;width:100%;"></div><div class="field"><label>Serial / IMEI</label><input type="text" id="em_sn" class="pts-inp" style="border-radius:8px;width:100%;"></div></div>
+      <div class="frow r3"><div class="field"><label>Device Type</label><select id="em_dt" class="pts-inp" style="border-radius:8px;width:100%;appearance:none;"><option>iPhone</option><option>iPad</option><option>MacBook</option><option>iMac</option><option>Mac Pro</option><option>Apple Watch</option><option>AirPods</option><option>iPod</option><option>Other Android Device</option><option>Data Recovery</option></select></div><div class="field"><label>Model</label><input type="text" id="em_dm" class="pts-inp" style="border-radius:8px;width:100%;"></div><div class="field"><label>Serial / IMEI</label><input type="text" id="em_sn" class="pts-inp" style="border-radius:8px;width:100%;"></div></div>
       <div class="frow r3"><div class="field"><label>Color</label><input type="text" id="em_col" class="pts-inp" style="border-radius:8px;width:100%;"></div><div class="field"><label>Passcode</label><input type="text" id="em_pc" class="pts-inp" style="border-radius:8px;width:100%;"></div><div class="field"><label>Accessories</label><input type="text" id="em_acc" class="pts-inp" style="border-radius:8px;width:100%;"></div></div>
       <div class="field" style="margin-bottom:13px;"><label>Issue / Complaint</label><textarea id="em_issue" class="pts-inp" style="border-radius:8px;width:100%;min-height:70px;resize:vertical;"></textarea></div>
       <div class="frow"><div class="field"><label>Warranty</label><select id="em_war" class="pts-inp" style="border-radius:8px;width:100%;appearance:none;"><option value="">Select…</option><option>No Warranty</option><option>7 Days</option><option>15 Days</option><option>30 Days</option><option>60 Days</option><option>90 Days</option><option>6 Months</option><option>1 Year</option></select></div><div class="field"><label>Technician</label><input type="text" id="em_tech" class="pts-inp" style="border-radius:8px;width:100%;"></div></div>
@@ -1211,8 +1225,58 @@ function doResetPassword(){
   rpShowStep(4);
   toast('Password reset successfully!',false);
 }
+/* ── SESSION TIMER ── */
+var _sessionWarningTimer=null,_sessionWarnShown=false;
+var SESSION_DUR=28800000; // 8 hours
+function startSessionTimer(){
+  if(_sessionWarningTimer)clearInterval(_sessionWarningTimer);
+  _sessionWarnShown=false;
+  var sess=JSON.parse(sessionStorage.getItem(AUTH)||'null');
+  if(!sess)return;
+  _sessionWarningTimer=setInterval(function(){
+    var s=JSON.parse(sessionStorage.getItem(AUTH)||'null');
+    if(!s){clearInterval(_sessionWarningTimer);return;}
+    var remaining=SESSION_DUR-(Date.now()-s.t);
+    if(remaining<=0){clearInterval(_sessionWarningTimer);doLogout();toast('Session expired — please log in again',true);return;}
+    if(remaining<=300000&&!_sessionWarnShown){ // 5 min warning
+      _sessionWarnShown=true;
+      var el=document.getElementById('sessionWarn');
+      if(el)el.style.display='flex';
+      var cd=document.getElementById('sessionCountdown');
+      var cdTimer=setInterval(function(){
+        var s2=JSON.parse(sessionStorage.getItem(AUTH)||'null');
+        var rem=s2?Math.max(0,SESSION_DUR-(Date.now()-s2.t)):0;
+        var m=Math.floor(rem/60000),s3=Math.floor((rem%60000)/1000);
+        if(cd)cd.textContent=m+':'+(s3<10?'0':'')+s3;
+        if(rem<=0)clearInterval(cdTimer);
+      },1000);
+    }
+  },15000);
+}
+function extendSession(){
+  var s=JSON.parse(sessionStorage.getItem(AUTH)||'null');
+  if(s){s.t=Date.now();sessionStorage.setItem(AUTH,JSON.stringify(s));}
+  _sessionWarnShown=false;
+  var el=document.getElementById('sessionWarn');
+  if(el)el.style.display='none';
+  startSessionTimer();
+  toast('Session extended by 8 hours',false);
+}
 function doLogout(){sessionStorage.removeItem(AUTH);document.getElementById('appShell').style.display='none';document.getElementById('loginGate').classList.remove('h');document.getElementById('lgUser').value='';document.getElementById('lgPass').value='';me=null;}
-function onAuth(u){me=u;document.getElementById('sbAv').textContent=u.u.charAt(0).toUpperCase();document.getElementById('sbUn').textContent=u.u;document.getElementById('sbUr').textContent=u.r;document.getElementById('appShell').style.display='flex';startClock();refreshAll();}
+function onAuth(u){
+  me=u;
+  document.getElementById('sbAv').textContent=u.u.charAt(0).toUpperCase();
+  document.getElementById('sbUn').textContent=u.u;
+  document.getElementById('sbUr').textContent=u.r;
+  document.getElementById('appShell').style.display='flex';
+  // Hide admin-only nav items for Technician
+  if(u.r==='Technician'){
+    document.querySelectorAll('.ni[data-page="settings"],.ni[data-page="reports"]').forEach(function(n){n.style.display='none';});
+    document.getElementById('clrAllBtn') && (document.getElementById('clrAllBtn').style.display='none');
+  }
+  startClock();refreshAll();
+  startSessionTimer();
+}
 (function init(){var s=JSON.parse(sessionStorage.getItem(AUTH)||'null');if(chkLock())return;if(s&&(Date.now()-s.t)<28800000){onAuth(s);}else{setTimeout(function(){var el=document.getElementById('lgUser');if(el)el.focus();},200);}})();
 
 /* ── DATA ── */
@@ -1227,6 +1291,24 @@ function saveJobs(j){
 function esc(s){if(s==null)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function stcls(s){var m={received:'st-received',diagnosed:'st-diagnosed',repairing:'st-repairing',ready:'st-ready',delivered:'st-delivered'};return m[(s||'').toLowerCase()]||'st-received';}
 function fmt(n){if(n>=100000)return(n/100000).toFixed(1)+'L';if(n>=1000)return(n/1000).toFixed(1)+'K';return Math.round(n);}
+/* ── AUTO-FILL RETURNING CUSTOMER ── */
+function autoFillCustomer(phone){
+  var digits=(phone||'').replace(/\D/g,'');
+  if(digits.length<10)return;
+  var jobs=loadJobs();
+  var match=jobs.filter(function(j){return(j.phone||'').replace(/\D/g,'').slice(-10)===digits.slice(-10);});
+  if(!match.length)return;
+  // Get the most recent job for this customer
+  match.sort(function(a,b){return(b.isoDate||'').localeCompare(a.isoDate||'');});
+  var j=match[0];
+  var filled=[];
+  if(!document.getElementById('j_fn').value&&j.firstName){document.getElementById('j_fn').value=j.firstName;filled.push('first name');}
+  if(!document.getElementById('j_ln').value&&j.lastName){document.getElementById('j_ln').value=j.lastName;filled.push('last name');}
+  if(!document.getElementById('j_em').value&&j.email){document.getElementById('j_em').value=j.email;filled.push('email');}
+  if(!document.getElementById('j_addr').value&&j.address){document.getElementById('j_addr').value=j.address;filled.push('address');}
+  if(!document.getElementById('j_gst').value&&j.gstNo){document.getElementById('j_gst').value=j.gstNo;filled.push('GST');}
+  if(filled.length)toast('✅ Returning customer — auto-filled: '+filled.join(', '),false);
+}
 function nextJobId(){
   var yr=new Date().getFullYear();
   var jobs=loadJobs();
@@ -1249,6 +1331,11 @@ function overdueJobs(){
 
 /* ── NAV ── */
 function nav(id){
+  // Role-based access control
+  var TECH_BLOCKED=['settings','reports'];
+  if(me && me.r==='Technician' && TECH_BLOCKED.includes(id)){
+    toast('⛔ Access restricted — Admin only',true);return;
+  }
   document.querySelectorAll('.page').forEach(function(p){p.classList.remove('on');});
   document.querySelectorAll('.ni').forEach(function(n){n.classList.remove('on');});
   var pg=document.getElementById('page-'+id);
@@ -1332,9 +1419,10 @@ document.getElementById('jobForm').addEventListener('submit',function(e){
     passcode:document.getElementById('j_pc').value.trim(),condition:document.getElementById('j_cond').value||'Not specified',
     issue:document.getElementById('j_issue').value.trim(),accessories:document.getElementById('j_acc').value.trim()||'None',
     cost:document.getElementById('j_cost').value.trim(),tech:document.getElementById('j_tech').value.trim()||'Vinayak',
-    techName:document.getElementById('j_tech').value.trim()||'Vinayak',warranty:document.getElementById('j_war').value||'',
+    techName:document.getElementById('j_tech').value.trim()||'Vinayak',warranty:'',warrantySetByTech:false,
     checklist:getChklist(),custConfirmName:document.getElementById('j_custName').value.trim(),
     status:'Received',finalCost:'0',payMode:'',diagnosis:'',partsUsed:[],
+    urgent:document.getElementById('j_urgent')&&document.getElementById('j_urgent').checked?true:false,
     repairLog:[{type:'created',action:'Job created',detail:document.getElementById('j_dt').value+' '+document.getElementById('j_dm').value.trim()+' · '+document.getElementById('j_issue').value.trim().substring(0,80),at:new Date().toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true}),by:me?me.u:''}]
   };
   var jobs=loadJobs();jobs.push(_job);saveJobs(jobs);
@@ -1361,7 +1449,18 @@ function newJob(){
 }
 function doPrint(){buildSR(_job);setTimeout(printSR,800);}
 function doWA(){
-  var j=_job,msg='🛠️ *JOB CARD — OM SAI Mobile Service Hub*\n\n📋 *Job ID:* '+j.jobId+'\n📅 *Date:* '+j.date+' at '+j.time+'\n\n👤 *Customer:* '+j.firstName+' '+j.lastName+'\n📞 *Phone:* +91 '+j.phone+'\n📧 *Email:* '+j.email+'\n\n📱 *Device:* '+j.devType+' '+j.devModel+(j.serial?'\n🔢 *Serial:* '+j.serial:'')+'\n🔍 *Condition:* '+j.condition+'\n\n⚠️ *Issue:* '+j.issue+'\n\n✍️ *Confirmed by:* '+j.custConfirmName+'\n👨‍🔧 *Technician:* '+j.tech+(j.cost?'\n💰 *Est. Cost:* ₹'+j.cost:'')+(j.advance&&j.advance!=='0'?'\n💵 *Advance:* ₹'+j.advance:'')+'\n\n📍 OM SAI Mobile Service Hub | +91-7208325405\n_Trust · Quality · Care_';
+  var j=_job;
+  var payInfo='';
+  if(j.cost&&parseFloat(j.cost)>0){
+    payInfo+='\n💰 *Est. Cost:* ₹'+j.cost+' (final after diagnosis)';
+  }
+  if(j.advance&&j.advance!=='0'&&parseFloat(j.advance)>0){
+    payInfo+='\n💵 *Advance Collected:* ₹'+j.advance;
+  }
+  if(!payInfo){
+    payInfo='\n💬 *Payment:* To be confirmed after diagnosis';
+  }
+  var msg='🛠️ *JOB CARD — OM SAI Mobile Service Hub*\n\n📋 *Job ID:* '+j.jobId+'\n📅 *Date:* '+j.date+' at '+j.time+'\n\n👤 *Customer:* '+j.firstName+' '+j.lastName+'\n📞 *Phone:* +91 '+j.phone+'\n📧 *Email:* '+j.email+'\n\n📱 *Device:* '+j.devType+' '+j.devModel+(j.serial?'\n🔢 *Serial:* '+j.serial:'')+'\n🔍 *Condition:* '+j.condition+'\n\n⚠️ *Issue:* '+j.issue+payInfo+'\n\n✍️ *Confirmed by:* '+j.custConfirmName+'\n👨‍🔧 *Technician:* '+j.tech+'\n\n📍 OM SAI Mobile Service Hub | +91-7208325405\n_Trust · Quality · Care_';
   window.open('https://wa.me/91'+j.phone.slice(-10)+'?text='+encodeURIComponent(msg),'_blank');
 }
 
@@ -1448,19 +1547,8 @@ function buildSR(j){
 }
 function printSR(){
   var el=document.getElementById('printArea');
-  if(!el||!el.innerHTML){toast('Nothing to download',true);return;}
-  // Collect all styles from the current page
-  var styles='';
-  document.querySelectorAll('style').forEach(function(s){styles+=s.innerHTML;});
-  document.querySelectorAll('link[rel="stylesheet"]').forEach(function(l){styles+='@import url("'+l.href+'");';});
-  var win=window.open('','_blank','width=800,height=900');
-  if(!win){toast('Please allow pop-ups and try again',true);return;}
-  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><style>'+styles+'body{background:#fff;padding:10mm;margin:0;}@page{size:A5;margin:6mm;}@media print{body{padding:0;}}</style></head><body>'+el.innerHTML+'</body></html>');
-  win.document.close();
-  setTimeout(function(){
-    win.focus();
-    win.print();
-  },800);
+  if(!el||!el.innerHTML.trim()){toast('Nothing to print — generate a report first',true);return;}
+  window.print();
 }
 function sf(l,v){return'<div class="sr-f"><div class="sr-fl">'+l+'</div><div class="sr-fv">'+v+'</div></div>';}
 
@@ -1513,6 +1601,25 @@ function renderTPDetail(j){
   h+='<div class="field"><label>Balance Due</label><div id="bal_disp" style="background:var(--dark5);border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-family:\'JetBrains Mono\',monospace;font-size:12px;color:'+(bal>0?'var(--orange)':'var(--green)')+';">'+(bal>0?'₹'+bal.toFixed(0):'✓ PAID')+'</div></div>';
   h+='<div class="field"><label>Payment Mode</label><select class="pts-inp" style="border-radius:8px;" onchange="updateField(\''+esc(j.jobId)+'\',\'payMode\',this.value)"><option value="">—</option><option'+(j.payMode==='Cash'?' selected':'')+'>Cash</option><option'+(j.payMode==='UPI'?' selected':'')+'>UPI</option><option'+(j.payMode==='Card'?' selected':'')+'>Card</option><option'+(j.payMode==='Bank Transfer'?' selected':'')+'>Bank Transfer</option></select></div>';
   h+='</div>';
+  // Warranty — full width row, set by technician
+  var warColor=j.warranty&&j.warranty!=='No Warranty'?'rgba(46,204,113,.5)':'rgba(201,168,76,.3)';
+  var warTextColor=j.warranty&&j.warranty!=='No Warranty'?'var(--green)':'';
+  var warFW=j.warranty&&j.warranty!=='No Warranty'?'700':'';
+  h+='<div style="margin-bottom:10px;padding:12px;background:rgba(201,168,76,0.04);border:1.5px solid rgba(201,168,76,0.2);border-radius:8px;">';
+  h+='<label style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--gold-dark);display:block;margin-bottom:7px;">🛡️ Warranty on Repair <span style="font-size:9px;font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0;">(set by technician — do not leave blank before delivery)</span></label>';
+  h+='<select style="width:100%;background:#FFFFFF;border:1.5px solid '+warColor+';border-radius:8px;padding:9px 12px;font-family:\'DM Sans\',sans-serif;font-size:12px;font-weight:'+warFW+';color:'+(warTextColor||'#333')+';outline:none;" onchange="updateField(\''+esc(j.jobId)+'\',\'warranty\',this.value);var c=this.value&&this.value!==\'No Warranty\';this.style.borderColor=c?\'rgba(46,204,113,.5)\':\'rgba(201,168,76,.3)\';this.style.color=c?\'var(--green)\':\'\';this.style.fontWeight=c?\'700\':\'\';toast(this.value?\'✅ Warranty set: \'+this.value:\'Warranty cleared\',false);">'
+    +'<option value="">⏳ Not decided yet</option>'
+    +'<option'+(j.warranty==='No Warranty'?' selected':'')+' value="No Warranty">🚫 No Warranty</option>'
+    +'<option'+(j.warranty==='7 Days'?' selected':'')+'>7 Days</option>'
+    +'<option'+(j.warranty==='15 Days'?' selected':'')+'>15 Days</option>'
+    +'<option'+(j.warranty==='30 Days'?' selected':'')+'>30 Days</option>'
+    +'<option'+(j.warranty==='60 Days'?' selected':'')+'>60 Days</option>'
+    +'<option'+(j.warranty==='90 Days'?' selected':'')+'>90 Days</option>'
+    +'<option'+(j.warranty==='6 Months'?' selected':'')+'>6 Months</option>'
+    +'<option'+(j.warranty==='1 Year'?' selected':'')+'>1 Year</option>'
+    +'</select>';
+  h+='<div style="font-size:9px;color:var(--muted);margin-top:5px;">📌 Select warranty after repair is done. This appears on the Final Report, Invoice, and Warranty Tracker.</div>';
+  h+='</div>';
   if(bal>0){
     h+='<div style="margin-bottom:10px;">';
     h+='<button class="btn btn-green" style="width:100%;font-size:13px;padding:11px;" onclick="openCollectPayment(\''+esc(j.jobId)+'\','+bal+')">💵 Collect Balance Payment — ₹'+bal.toFixed(0)+'</button>';
@@ -1561,6 +1668,10 @@ function setStatus(jobId,idx){
   jobs[i].status=STATUSES[idx];
   if(!jobs[i].statusHistory)jobs[i].statusHistory=[];
   jobs[i].statusHistory.push({status:STATUSES[idx],at:now_ts(),by:me?me.u:''});
+  // Save deliveredDate explicitly when marked Delivered
+  if(STATUSES[idx]==='Delivered'&&!jobs[i].deliveredDate){
+    jobs[i].deliveredDate=new Date().toISOString();
+  }
   logRepair(jobs,i,'status','Status changed: '+prev+' → '+STATUSES[idx]);
   saveJobs(jobs);refreshAll();renderTPList();selectJob(jobId);
   toast('Status → '+STATUSES[idx],false);
@@ -1578,7 +1689,7 @@ function setStatus(jobId,idx){
     }
     // Status: Ready for Pickup
     else if(idx===3){
-      msg='✅ *Your device is Ready for Pickup!*\n\nDear '+j.firstName+',\n\nGreat news! Your repair is complete and your device is ready for collection.\n\n📋 *Job ID:* '+j.jobId+'\n📱 *Device:* '+j.devType+' '+j.devModel+'\n'+(c>0?'💰 *Total Amount:* ₹'+c.toFixed(0)+'\n':'')+(b>0?'⚠️ *Balance Due:* ₹'+b.toFixed(0)+' (please bring exact amount)\n':'✅ *Payment:* Fully Paid\n')+(j.warranty&&j.warranty!=='No Warranty'?'🛡️ *Warranty:* '+j.warranty+'\n':'')+'⏰ *Store Hours:* Mon–Sun, 9 AM – 11 PM\n\nPlease visit us with this message and a valid ID to collect your device.\n\n📍 OM SAI Mobile Service Hub\nChamunda Dham Building, Dattapada Rd, Jaya Nagar, Borivali (E), Mumbai\n📞 +91-7208325405\n\n_Thank you for choosing us! 🙏_';
+      msg='✅ *Your device is Ready for Pickup!*\n\nDear '+j.firstName+',\n\nGreat news! Your repair is complete and your device is ready for collection.\n\n📋 *Job ID:* '+j.jobId+'\n📱 *Device:* '+j.devType+' '+j.devModel+'\n'+(c>0?'💰 *Total Amount:* ₹'+c.toFixed(0)+'\n':'')+(c>0?(b>0?'⚠️ *Balance Due:* ₹'+b.toFixed(0)+' (please bring exact amount)\n':'✅ *Payment:* Fully Paid\n'):'')+(j.warranty&&j.warranty!=='No Warranty'?'🛡️ *Warranty:* '+j.warranty+'\n':'')+'⏰ *Store Hours:* Mon–Sun, 9 AM – 11 PM\n\nPlease visit us with this message and a valid ID to collect your device.\n\n📍 OM SAI Mobile Service Hub\nChamunda Dham Building, Dattapada Rd, Jaya Nagar, Borivali (E), Mumbai\n📞 +91-7208325405\n\n_Thank you for choosing us! 🙏_';
     }
     if(msg){
       if(confirm('Send WhatsApp notification to '+j.firstName+' (+91 '+d.slice(-10)+') about status: '+STATUSES[idx]+'?')){
@@ -1663,7 +1774,16 @@ function removePart(jobId,pi){
   jobs[i].partsUsed.splice(pi,1);
   saveJobs(jobs);calcPartsTotal(jobId);selectJob(jobId);
 }
-function refreshBal(jobId){var j=loadJobs().find(function(x){return x.jobId===jobId;});if(!j)return;var c=parseFloat(j.finalCost)||0,a=parseFloat(j.advance)||0,b=Math.max(0,c-a),el=document.getElementById('bal_disp');if(el){el.textContent=b>0?'₹'+b.toFixed(0):'✓ PAID';el.style.color=b>0?'var(--orange)':'var(--green)';}}
+function refreshBal(jobId){
+  var j=loadJobs().find(function(x){return x.jobId===jobId;});
+  if(!j)return;
+  var c=parseFloat(j.finalCost)||0,a=parseFloat(j.advance)||0,b=Math.max(0,c-a),el=document.getElementById('bal_disp');
+  if(el){
+    if(c===0){el.textContent='—';el.style.color='var(--muted)';}
+    else if(b>0){el.textContent='₹'+b.toFixed(0);el.style.color='var(--orange)';}
+    else{el.textContent='✓ PAID';el.style.color='var(--green)';}
+  }
+}
 var _deleteJobId=null;
 function deleteJob(jobId){
   // Block admin from deleting jobs
@@ -1771,7 +1891,7 @@ function confirmDelete(){
 }
 document.getElementById('deleteModal').addEventListener('click',function(e){if(e.target===this)closeDeleteModal();});
 function printSRFor(jobId){var j=loadJobs().find(function(x){return x.jobId===jobId;});if(!j){toast('Job not found',true);return;}_job=j;buildSR(j);setTimeout(printSR,800);}
-function tpWA(jobId){var j=loadJobs().find(function(x){return x.jobId===jobId;});if(!j)return;var c=parseFloat(j.finalCost)||0,a=parseFloat(j.advance)||0,b=Math.max(0,c-a);var msg='🛠️ *OM SAI Mobile Service Hub Update*\n\nDear '+j.firstName+',\n\nYour repair status:\n*Job ID:* '+j.jobId+'\n*Device:* '+j.devType+' '+j.devModel+'\n*Status:* '+j.status+(c>0?'\n*Total:* ₹'+c.toFixed(0):'')+(b>0?'\n*Balance Due:* ₹'+b.toFixed(0):'\n*Payment:* Fully Paid')+'\n\nPlease visit us to collect your device.\n📍 Dattapada Rd, Borivali (E)\n📞 +91-7208325405\n_Trust · Quality · Care_';var d=(j.phone||'').replace(/\D/g,'');if(d.length<10){toast('No valid phone',true);return;}window.open('https://wa.me/91'+d.slice(-10)+'?text='+encodeURIComponent(msg),'_blank');}
+function tpWA(jobId){var j=loadJobs().find(function(x){return x.jobId===jobId;});if(!j)return;var c=parseFloat(j.finalCost)||0,a=parseFloat(j.advance)||0,b=Math.max(0,c-a);var payLine=c>0?(b>0?'\n*Balance Due:* ₹'+b.toFixed(0)+' (please bring exact amount)':'\n*Payment:* Fully Paid ✅'):'';var msg='🛠️ *OM SAI Mobile Service Hub Update*\n\nDear '+j.firstName+',\n\nYour repair status:\n*Job ID:* '+j.jobId+'\n*Device:* '+j.devType+' '+j.devModel+'\n*Status:* '+j.status+(c>0?'\n*Total:* ₹'+c.toFixed(0):'')+payLine+'\n\nPlease visit us to collect your device.\n📍 Chamunda Dham Building, Dattapada Rd, Jaya Nagar, Borivali (E)\n📞 +91-7208325405\n_Trust · Quality · Care_';var d=(j.phone||'').replace(/\D/g,'');if(d.length<10){toast('No valid phone',true);return;}window.open('https://wa.me/91'+d.slice(-10)+'?text='+encodeURIComponent(msg),'_blank');}
 
 /* ── EDIT JOB ── */
 function openEdit(jobId){
@@ -1864,7 +1984,7 @@ function bulkWA(){
   valid.forEach(function(j){
     setTimeout(function(){
       var c=parseFloat(j.finalCost)||0,a=parseFloat(j.advance)||0,b=Math.max(0,c-a);
-      var msg='📱 *Reminder — OM SAI Mobile Service Hub*\n\nDear '+j.firstName+',\n\nYour device is ready and waiting for collection!\n\n📋 *Job ID:* '+j.jobId+'\n📱 *Device:* '+j.devType+' '+j.devModel+(c>0?'\n💰 *Amount Due:* ₹'+b.toFixed(0)+' (please bring exact amount)':'\n✅ *Payment:* Fully Paid')+'\n\n⏰ Store open Mon–Sun, 9 AM – 11 PM\n📍 Chamunda Dham Building, Dattapada Rd, Borivali (E)\n📞 +91-7208325405\n\n_Please collect at the earliest to avoid storage charges._\n_Trust · Quality · Care 🙏_';
+      var msg='📱 *Reminder — OM SAI Mobile Service Hub*\n\nDear '+j.firstName+',\n\nYour device is ready and waiting for collection!\n\n📋 *Job ID:* '+j.jobId+'\n📱 *Device:* '+j.devType+' '+j.devModel+(c>0?'\n💰 *Amount Due:* ₹'+b.toFixed(0)+(b<=0?' (Fully Paid)':' (please bring exact amount)'):'')+'\n\n⏰ Store open Mon–Sun, 9 AM – 11 PM\n📍 Chamunda Dham Building, Dattapada Rd, Borivali (E)\n📞 +91-7208325405\n\n_Please collect at the earliest to avoid storage charges._\n_Trust · Quality · Care 🙏_';
       var d=j.phone.replace(/\D/g,'');
       window.open('https://wa.me/91'+d.slice(-10)+'?text='+encodeURIComponent(msg),'_blank');
     },delay);
@@ -1908,14 +2028,8 @@ function genInvoice(){
 function clearInvoice(){document.getElementById('inv_input').value='';document.getElementById('inv_out').innerHTML='<div class="card" style="text-align:center;padding:48px 24px;"><div style="font-size:44px;opacity:.2;margin-bottom:12px;">🧾</div><div style="font-size:13px;color:var(--muted);">Enter a Job ID above and click Generate.</div></div>';}
 function printInv(){
   var el=document.getElementById('printArea');
-  if(!el||!el.innerHTML){toast('Nothing to download',true);return;}
-  var styles='';
-  document.querySelectorAll('style').forEach(function(s){styles+=s.innerHTML;});
-  var win=window.open('','_blank','width=800,height=900');
-  if(!win){toast('Please allow pop-ups and try again',true);return;}
-  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><style>'+styles+'body{background:#fff;padding:10mm;margin:0;}@page{size:A5;margin:6mm;}@media print{body{padding:0;}}</style></head><body>'+el.innerHTML+'</body></html>');
-  win.document.close();
-  setTimeout(function(){win.focus();win.print();},800);
+  if(!el||!el.innerHTML.trim()){toast('Generate an invoice first',true);return;}
+  window.print();
 }
 function invWA(jobId){var j=loadJobs().find(function(x){return x.jobId===jobId;});if(!j)return;var c=parseFloat(j.finalCost)||0,a=parseFloat(j.advance)||0,b=Math.max(0,c-a),ip=b<=0;var pt=(j.partsUsed||[]).filter(function(p){return p.name&&p.name.trim();}).map(function(p){return'  • '+p.name+(p.qty&&p.qty!='1'?' ×'+p.qty:'')+(parseFloat(p.price)>0?' — ₹'+p.price:'');}).join('\n')||'  • General repair service';var msg='🧾 *Invoice — OM SAI Mobile Service Hub*\n\nInvoice: INV-'+j.jobId+'\nJob: '+j.jobId+'\nCustomer: '+j.firstName+' '+j.lastName+'\nDevice: '+j.devType+' '+j.devModel+'\n\n*Services:*\n'+pt+'\n\n'+(c>0?'Total: ₹'+c.toFixed(0)+'\n':'')+(a>0?'Advance: ₹'+a.toFixed(0)+'\n':'')+(ip?'*Status: FULLY PAID ✅*':'*Balance Due: ₹'+b.toFixed(0)+'*')+'\n\nWarranty: 30 Days on replaced parts.\nThank you!\n📞 +91-7208325405';var d=(j.phone||'').replace(/\D/g,'');if(d.length<10){toast('No valid phone',true);return;}window.open('https://wa.me/91'+d.slice(-10)+'?text='+encodeURIComponent(msg),'_blank');}
 
@@ -2051,18 +2165,78 @@ function printDailySummary(){
     (pendingCollection.length?'<div style="font-size:9px;font-weight:700;color:#C9A84C;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">Pending Customer Collection</div><table style="width:100%;border-collapse:collapse;font-size:10px;margin-bottom:12px;"><thead><tr style="background:#fff8e1;"><th style="padding:5px 7px;border:1px solid #e8e0cc;text-align:left;">Job ID</th><th style="padding:5px 7px;border:1px solid #e8e0cc;text-align:left;">Customer</th><th style="padding:5px 7px;border:1px solid #e8e0cc;text-align:left;">Phone</th><th style="padding:5px 7px;border:1px solid #e8e0cc;text-align:right;">Balance</th></tr></thead><tbody>'+pRows+'</tbody></table>':'<div style="font-size:10px;color:#2E7D32;font-weight:700;margin-bottom:12px;">✓ No devices pending collection.</div>')+
     '<div style="border-top:1px solid #eee;padding-top:8px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:10px;"><div><span style="color:#888;">Total Billed:</span> <strong>₹'+billed.toFixed(0)+'</strong></div><div><span style="color:#888;">Collected:</span> <strong>₹'+collected.toFixed(0)+'</strong></div><div><span style="color:#888;">Outstanding:</span> <strong>₹'+(billed-collected).toFixed(0)+'</strong></div></div>'+
     '<div style="text-align:center;border-top:1px solid #eee;padding-top:7px;margin-top:10px;font-size:8px;color:#aaa;">OM SAI Mobile Service Hub · Daily Summary · Generated '+new Date().toLocaleString('en-IN')+'</div></div>';
-  var el=document.getElementById('printArea');
-  var styles='';
-  document.querySelectorAll('style').forEach(function(s){styles+=s.innerHTML;});
-  var win=window.open('','_blank','width=800,height=900');
-  if(!win){toast('Please allow pop-ups and try again',true);return;}
-  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><style>'+styles+'body{background:#fff;padding:10mm;margin:0;}@page{size:A5;margin:6mm;}@media print{body{padding:0;}}</style></head><body>'+el.innerHTML+'</body></html>');
-  win.document.close();
-  setTimeout(function(){win.focus();win.print();},600);
+  window.print();
 }
 
 /* ── ANALYTICS ── */
 function renderAnalytics(){
+  // Warranty tracker — uses actual DELIVERY date from statusHistory
+  var now=Date.now();
+  var WARRANTY_DAYS={'7 Days':7,'15 Days':15,'30 Days':30,'60 Days':60,'90 Days':90,'6 Months':180,'1 Year':365};
+
+  function getDeliveredDate(j){
+    // First: explicit deliveredDate field (set from now on)
+    if(j.deliveredDate) return new Date(j.deliveredDate).getTime();
+    // Second: look for statusHistory entry where status became Delivered
+    var hist=j.statusHistory||[];
+    for(var i=hist.length-1;i>=0;i--){
+      if((hist[i].status||'').toLowerCase()==='delivered'&&hist[i].at){
+        return new Date(hist[i].at).getTime();
+      }
+    }
+    // Third: look in repairLog
+    var log=j.repairLog||[];
+    for(var i=log.length-1;i>=0;i--){
+      if((log[i].detail||'').toLowerCase().includes('delivered')&&log[i].at){
+        return new Date(log[i].at).getTime();
+      }
+    }
+    // Fallback: use isoDate (intake date)
+    return j.isoDate?new Date(j.isoDate).getTime():0;
+  }
+
+  var warJobs=loadJobs().filter(function(j){
+    if(j.status!=='Delivered')return false;
+    if(!j.warranty||j.warranty===''||j.warranty==='No Warranty'||j.warranty==='No warranty')return false;
+    var wDays=WARRANTY_DAYS[j.warranty];
+    if(!wDays)return false;
+    var delivTs=getDeliveredDate(j);
+    if(!delivTs)return false;
+    return (delivTs + wDays*86400000) > now;
+  }).sort(function(a,b){
+    var da=WARRANTY_DAYS[a.warranty]||0,db=WARRANTY_DAYS[b.warranty]||0;
+    var ea=getDeliveredDate(a)+da*86400000, eb=getDeliveredDate(b)+db*86400000;
+    return ea-eb;
+  });
+
+  var wEl=document.getElementById('warranty_list');
+  if(wEl){
+    if(!warJobs.length){
+      wEl.innerHTML='<div style="color:var(--muted);font-size:12px;text-align:center;padding:16px;">No active warranties yet. Jobs appear here when delivered with a warranty period set.</div>';
+    } else {
+      var wh='<table class="dtbl" style="font-size:11px;"><thead><tr><th>Job ID</th><th>Customer</th><th>Device</th><th>Warranty</th><th>Delivered On</th><th>Expires</th><th>Days Left</th></tr></thead><tbody>';
+      warJobs.forEach(function(j){
+        var wDays=WARRANTY_DAYS[j.warranty]||0;
+        var delivTs=getDeliveredDate(j);
+        var delivDate=new Date(delivTs);
+        var expiry=new Date(delivTs+wDays*86400000);
+        var dLeft=Math.ceil((expiry.getTime()-now)/86400000);
+        var col=dLeft<=7?'#e53935':dLeft<=14?'#F39C12':'#2ECC71';
+        var locOpts={day:'2-digit',month:'short',year:'numeric'};
+        wh+='<tr>'
+          +'<td class="mono" style="color:var(--gold);">'+esc(j.jobId)+'</td>'
+          +'<td>'+esc((j.firstName||'')+' '+(j.lastName||''))+'</td>'
+          +'<td>'+esc((j.devType||'')+' '+(j.devModel||''))+'</td>'
+          +'<td>'+esc(j.warranty)+'</td>'
+          +'<td>'+delivDate.toLocaleDateString('en-IN',locOpts)+'</td>'
+          +'<td>'+expiry.toLocaleDateString('en-IN',locOpts)+'</td>'
+          +'<td><span style="color:'+col+';font-weight:700;">'+dLeft+' day'+(dLeft!==1?'s':'')+'</span></td>'
+          +'</tr>';
+      });
+      wh+='</tbody></table>';
+      wEl.innerHTML=wh;
+    }
+  }
   var jobs=loadJobs(),byS={Received:0,Diagnosed:0,Repairing:0,Ready:0,Delivered:0},byD={},rev=0,revJ=0;
   jobs.forEach(function(j){var s=j.status||'Received';if(byS[s]!==undefined)byS[s]++;else byS.Received++;var dt=j.devType||'Other';byD[dt]=(byD[dt]||0)+1;var c=parseFloat(j.finalCost)||0;if(c>0){rev+=c;revJ++;}});
   var del=byS.Delivered,tot=jobs.length,rate=tot>0?Math.round(del/tot*100):0,avg=revJ>0?rev/revJ:0;
@@ -2086,6 +2260,25 @@ function renderAnalytics(){
   if(topI.length){var mxI=iC[topI[0]]||1;out+='<div class="bar-wrap">';topI.forEach(function(k){var p=Math.round(iC[k]/mxI*100);out+='<div class="bar-row"><div class="bar-name" style="font-size:9px;text-transform:capitalize;">'+esc(k.substring(0,14))+'</div><div class="bar-track"><div class="bar-fill" style="width:'+p+'%;background:#9B59B6"></div></div><div class="bar-val">'+iC[k]+'</div></div>';});out+='</div>';}
   else out+='<div style="color:var(--muted);font-size:12px;text-align:center;padding:20px;">Not enough data</div>';
   out+='</div></div>';
+  // ── Technician Performance ──
+  var techMap={};
+  jobs.forEach(function(j){
+    var t=j.techName||j.tech||'Unassigned';
+    if(!techMap[t])techMap[t]={n:0,done:0,rev:0};
+    techMap[t].n++;
+    if(j.status==='Delivered')techMap[t].done++;
+    techMap[t].rev+=parseFloat(j.finalCost)||0;
+  });
+  var techKeys=Object.keys(techMap).sort(function(a,b){return techMap[b].n-techMap[a].n;});
+  if(techKeys.length>0){
+    var mxT=techMap[techKeys[0]].n||1;
+    out+='<div class="card"><div class="card-hd"><div class="card-ico">👨‍🔧</div><div class="card-ttl">Technician Performance</div></div><div class="card-body"><div class="bar-wrap">';
+    techKeys.forEach(function(k){
+      var td=techMap[k],rate=td.n>0?Math.round(td.done/td.n*100):0,p=Math.round(td.n/mxT*100);
+      out+='<div class="bar-row" title="'+k+': '+td.n+' jobs, '+rate+'% done, ₹'+fmt(td.rev)+' revenue"><div class="bar-name" style="font-size:10px;min-width:80px;">'+esc(k)+'</div><div class="bar-track"><div class="bar-fill" style="width:'+p+'%;background:linear-gradient(90deg,var(--gold),var(--gold-dark))"></div></div><div class="bar-val" style="font-size:9px;min-width:120px;">'+td.n+' jobs · '+rate+'% · ₹'+fmt(td.rev)+'</div></div>';
+    });
+    out+='</div></div></div>';
+  }
   document.getElementById('an_charts').innerHTML=out;
 }
 
@@ -2122,11 +2315,43 @@ function renderInventory(){
 
 /* ── REPORTS ── */
 function renderReports(){
-  var r=[{i:'📊',t:'Job Summary',d:'All jobs by status'},{ i:'💰',t:'Revenue Report',d:'Monthly billing summary'},{i:'👥',t:'Customer Report',d:'Customer history &amp; spend'},{i:'🔩',t:'Parts Usage',d:'All parts used across jobs'},{i:'📋',t:'Pending Jobs',d:'All undelivered jobs'},{i:'📤',t:'Export JSON',d:'Full data backup file'}];
-  var fns=['rptSummary','rptRevenue','rptCustomers','rptParts','rptPending','exportData'];
+  var r=[{i:'📊',t:'All Jobs CSV',d:'Complete job list as spreadsheet'},{i:'💰',t:'Revenue CSV',d:'Monthly billing as spreadsheet'},{i:'👥',t:'Customers CSV',d:'Customer history &amp; spend'},{i:'🔩',t:'Parts Usage CSV',d:'All parts used across jobs'},{i:'📋',t:'Pending Jobs',d:'All undelivered jobs (text)'},{i:'📤',t:'Export JSON',d:'Full data backup file'}];
+  var fns=['rptAllJobsCsv','rptRevenueCsv','rptCustomersCsv','rptPartsCsv','rptPending','exportData'];
   document.getElementById('rpt_grid').innerHTML=r.map(function(x,i){return'<div class="card" style="cursor:pointer;display:flex;align-items:center;gap:13px;padding:16px 18px;margin-bottom:0;" onclick="'+fns[i]+'()"><div style="font-size:22px;width:40px;height:40px;border-radius:10px;background:rgba(201,168,76,.07);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;">'+x.i+'</div><div><div style="font-size:13px;font-weight:600;margin-bottom:2px;">'+x.t+'</div><div style="font-size:11px;color:var(--muted);">'+x.d+'</div></div><span style="margin-left:auto;color:var(--muted);">↓</span></div>';}).join('');
 }
 function dlTxt(txt,fn){var b=new Blob([txt],{type:'text/plain'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=fn;a.click();toast('Downloaded',false);}
+function dlCsv(rows,fn){
+  var csv=rows.map(function(r){return r.map(function(c){var s=String(c==null?'':c).replace(/"/g,'""');return /[,\n"]/.test(s)?'"'+s+'"':s;}).join(',');}).join('\n');
+  var b=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=fn;a.click();toast('CSV downloaded',false);
+}
+function rptAllJobsCsv(){
+  var j=loadJobs();
+  var rows=[['Job ID','Date','Customer Name','Phone','Email','Device','Model','Status','Tech','Final Cost','Advance','Balance','Warranty','Urgent']];
+  j.forEach(function(x){var c=parseFloat(x.finalCost)||0,a=parseFloat(x.advance)||0;rows.push([x.jobId,x.date||'',((x.firstName||'')+' '+(x.lastName||'')).trim(),x.phone||'',x.email||'',x.devType||'',x.devModel||'',x.status||'',x.techName||x.tech||'',c.toFixed(0),a.toFixed(0),Math.max(0,c-a).toFixed(0),x.warranty||'',x.urgent?'Yes':'No']);});
+  dlCsv(rows,'all-jobs-'+new Date().toISOString().split('T')[0]+'.csv');
+}
+function rptRevenueCsv(){
+  var j=loadJobs(),m={};
+  j.forEach(function(x){var k=x.isoDate?x.isoDate.substring(0,7):'Unknown';if(!m[k])m[k]={b:0,c:0,n:0};var co=parseFloat(x.finalCost)||0,ad=parseFloat(x.advance)||0;m[k].b+=co;m[k].c+=Math.min(ad,co);m[k].n++;});
+  var rows=[['Month','Jobs','Total Billed (₹)','Collected (₹)','Outstanding (₹)']];
+  Object.keys(m).sort().forEach(function(k){rows.push([k,m[k].n,m[k].b.toFixed(0),m[k].c.toFixed(0),(m[k].b-m[k].c).toFixed(0)]);});
+  dlCsv(rows,'revenue-'+new Date().toISOString().split('T')[0]+'.csv');
+}
+function rptCustomersCsv(){
+  var j=loadJobs(),c={};
+  j.forEach(function(x){var k=(x.phone||'').replace(/\D/g,'')||((x.firstName||'')+(x.lastName||''));if(!k)return;if(!c[k])c[k]={fn:x.firstName||'',ln:x.lastName||'',ph:x.phone||'',em:x.email||'',n:0,spend:0};c[k].n++;c[k].spend+=parseFloat(x.finalCost)||0;});
+  var rows=[['First Name','Last Name','Phone','Email','Total Jobs','Total Spend (₹)']];
+  Object.values(c).sort(function(a,b){return b.n-a.n;}).forEach(function(x){rows.push([x.fn,x.ln,x.ph,x.em,x.n,x.spend.toFixed(0)]);});
+  dlCsv(rows,'customers-'+new Date().toISOString().split('T')[0]+'.csv');
+}
+function rptPartsCsv(){
+  var j=loadJobs(),pm={};
+  j.forEach(function(x){(x.partsUsed||[]).forEach(function(p){if(!p.name||!p.name.trim())return;var k=p.name.trim();if(!pm[k])pm[k]={name:k,qty:0,val:0};pm[k].qty+=parseInt(p.qty)||1;pm[k].val+=(parseFloat(p.price)||0)*(parseInt(p.qty)||1);});});
+  var rows=[['Part Name','Times Used','Total Value (₹)']];
+  Object.values(pm).sort(function(a,b){return b.qty-a.qty;}).forEach(function(p){rows.push([p.name,p.qty,p.val.toFixed(0)]);});
+  dlCsv(rows,'parts-'+new Date().toISOString().split('T')[0]+'.csv');
+}
 function rptSummary(){var j=loadJobs(),c={};j.forEach(function(x){var s=x.status||'Received';c[s]=(c[s]||0)+1;});var l=['JOB SUMMARY — OM SAI Mobile Service Hub','Generated: '+new Date().toLocaleString(),'','Status Breakdown:'];Object.keys(c).forEach(function(k){l.push('  '+k+': '+c[k]);});l.push('  TOTAL: '+j.length);dlTxt(l.join('\n'),'job-summary.txt');}
 function rptRevenue(){var j=loadJobs(),m={};j.forEach(function(x){var k=x.isoDate?x.isoDate.substring(0,7):'Unknown';if(!m[k])m[k]={b:0,c:0};var co=parseFloat(x.finalCost)||0,ad=parseFloat(x.advance)||0;m[k].b+=co;m[k].c+=Math.min(ad,co);});var l=['REVENUE REPORT — OM SAI Mobile Service Hub','Generated: '+new Date().toLocaleString(),''],tb=0,tc=0;Object.keys(m).sort().forEach(function(k){l.push(k+': Billed ₹'+m[k].b.toFixed(0)+' | Collected ₹'+m[k].c.toFixed(0));tb+=m[k].b;tc+=m[k].c;});l.push('','TOTAL Billed: ₹'+tb.toFixed(0),'TOTAL Collected: ₹'+tc.toFixed(0),'Outstanding: ₹'+(tb-tc).toFixed(0));dlTxt(l.join('\n'),'revenue.txt');}
 function rptCustomers(){var j=loadJobs(),c={};j.forEach(function(x){var k=(x.phone||'').replace(/\D/g,'')||((x.firstName||'')+(x.lastName||''));if(!k)return;if(!c[k])c[k]={n:(x.firstName||'')+' '+(x.lastName||''),p:x.phone||'',jj:[]};c[k].jj.push(x.jobId+'('+x.status+')');});var l=['CUSTOMER REPORT — OM SAI Mobile Service Hub','Generated: '+new Date().toLocaleString(),''];Object.values(c).forEach(function(x){l.push(x.n+' | '+x.p+' | Jobs: '+x.jj.join(', '));});dlTxt(l.join('\n'),'customers.txt');}
@@ -2172,6 +2397,37 @@ function confirmClearAll(){
   toast('All data cleared by '+match.u,true);
 }
 
+/* ── CHANGE PASSWORD ── */
+function openChangePass(){
+  document.getElementById('cpModal').style.display='flex';
+  document.getElementById('cp_cur').value='';
+  document.getElementById('cp_new').value='';
+  document.getElementById('cp_con').value='';
+  document.getElementById('cp_err').style.display='none';
+  setTimeout(function(){document.getElementById('cp_cur').focus();},150);
+}
+function closeChangePass(){document.getElementById('cpModal').style.display='none';}
+function submitChangePass(){
+  var cur=document.getElementById('cp_cur').value.trim();
+  var nw=document.getElementById('cp_new').value.trim();
+  var con=document.getElementById('cp_con').value.trim();
+  var err=document.getElementById('cp_err');
+  err.style.display='none';
+  if(!cur){err.textContent='Enter your current password.';err.style.display='block';return;}
+  if(me.p!==cur){err.textContent='Current password is incorrect.';err.style.display='block';return;}
+  if(nw.length<8){err.textContent='New password must be at least 8 characters.';err.style.display='block';return;}
+  if(!/[A-Z]/.test(nw)||!/[0-9]/.test(nw)){err.textContent='Password needs at least one uppercase letter and one number.';err.style.display='block';return;}
+  if(nw!==con){err.textContent='Passwords do not match.';err.style.display='block';return;}
+  // Update in USERS array and session
+  var u=USERS.find(function(x){return x.u===me.u;});
+  if(u)u.p=nw;
+  me.p=nw;
+  var s=JSON.parse(sessionStorage.getItem(AUTH)||'null');
+  if(s){s.p=nw;sessionStorage.setItem(AUTH,JSON.stringify(s));}
+  closeChangePass();
+  toast('✅ Password changed successfully',false);
+}
+
 /* ── DRAWER ── */
 function openDr(jobId){
   var j=loadJobs().find(function(x){return x.jobId===jobId;});if(!j)return;
@@ -2211,7 +2467,37 @@ function closeDr(){document.getElementById('drawer').classList.remove('open');do
 /* ── CLOCK & TOAST ── */
 function startClock(){(function tick(){var n=new Date(),h=n.getHours(),m=n.getMinutes(),s=n.getSeconds();document.getElementById('sbClk').textContent=(h<10?'0':'')+h+':'+(m<10?'0':'')+m+':'+(s<10?'0':'')+s;setTimeout(tick,1000);})();}
 function toast(msg,isErr){var t=document.getElementById('toast');t.textContent=msg;t.className=isErr?'err':'';t.classList.add('show');setTimeout(function(){t.classList.remove('show');},3000);}
-</script><!-- PROTECTED CLEAR ALL MODAL -->
+</script><!-- SESSION EXPIRY WARNING BANNER -->
+<div id="sessionWarn" style="display:none;position:fixed;bottom:70px;left:50%;transform:translateX(-50%);z-index:700;background:#FFFFFF;border:2px solid rgba(243,156,18,0.5);border-radius:12px;padding:14px 20px;box-shadow:0 8px 32px rgba(0,0,0,0.15);align-items:center;gap:14px;min-width:320px;">
+  <span style="font-size:22px;">⏰</span>
+  <div style="flex:1;">
+    <div style="font-size:13px;font-weight:700;color:#E65100;">Session expiring soon</div>
+    <div style="font-size:11px;color:#888;margin-top:2px;">Auto-logout in <strong id="sessionCountdown" style="color:#E65100;">5:00</strong></div>
+  </div>
+  <button class="btn btn-gold btn-sm" onclick="extendSession()">Extend Session</button>
+  <button onclick="document.getElementById('sessionWarn').style.display='none'" style="background:none;border:none;cursor:pointer;color:#888;font-size:16px;">✕</button>
+</div>
+
+<!-- CHANGE PASSWORD MODAL -->
+<div id="cpModal" style="display:none;position:fixed;inset:0;z-index:600;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;padding:20px;" onclick="if(event.target===this)closeChangePass()">
+  <div style="background:#FFFFFF;border:1.5px solid rgba(201,168,76,0.4);border-radius:16px;padding:28px 26px;width:100%;max-width:360px;box-shadow:0 20px 60px rgba(0,0,0,0.12);">
+    <div style="font-size:24px;text-align:center;margin-bottom:8px;">🔑</div>
+    <div style="font-family:'Playfair Display',serif;font-size:16px;font-weight:700;color:#111;text-align:center;margin-bottom:16px;">Change Password</div>
+    <label class="lb-label">Current Password</label>
+    <input class="lb-input" type="password" id="cp_cur" placeholder="Your current password" style="margin-bottom:10px;" onkeydown="if(event.key==='Enter')document.getElementById('cp_new').focus()">
+    <label class="lb-label">New Password</label>
+    <input class="lb-input" type="password" id="cp_new" placeholder="Min 8 chars, 1 uppercase, 1 number" style="margin-bottom:10px;" onkeydown="if(event.key==='Enter')document.getElementById('cp_con').focus()">
+    <label class="lb-label">Confirm New Password</label>
+    <input class="lb-input" type="password" id="cp_con" placeholder="Repeat new password" style="margin-bottom:6px;" onkeydown="if(event.key==='Enter')submitChangePass()">
+    <div id="cp_err" style="font-size:11px;color:var(--red);margin-bottom:8px;display:none;"></div>
+    <div style="display:flex;gap:10px;margin-top:6px;">
+      <button class="btn btn-outline" style="flex:1;" onclick="closeChangePass()">Cancel</button>
+      <button class="btn btn-gold" style="flex:1;" onclick="submitChangePass()">✅ Update Password</button>
+    </div>
+  </div>
+</div>
+
+<!-- PROTECTED CLEAR ALL MODAL -->
 <div id="clearAllModal" style="display:none;position:fixed;inset:0;z-index:600;background:rgba(0,0,0,0.6);align-items:center;justify-content:center;padding:20px;" onclick="if(event.target===this)closeClearAllModal()">
   <div style="background:#FFFFFF;border:1.5px solid rgba(231,76,60,0.35);border-radius:16px;padding:30px 28px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,0.15);">
     <div style="font-size:36px;text-align:center;margin-bottom:10px;">🗑️</div>
