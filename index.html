@@ -2137,11 +2137,39 @@ function exportData(){var b=new Blob([JSON.stringify(loadJobs(),null,2)],{type:'
 /* ── SETTINGS ── */
 function renderSettings(){var j=loadJobs();document.getElementById('set_total').textContent=j.length;document.getElementById('set_size').textContent=Math.round((localStorage.getItem(STORE)||'').length/1024*10)/10+' KB';}
 function clearAll(){
-  if(!confirm('⚠️ Delete ALL '+loadJobs().length+' records? This CANNOT be undone!'))return;
+  // Open protected delete modal instead of immediate delete
+  document.getElementById('clearAllModal').style.display='flex';
+  document.getElementById('ca_user').value='';
+  document.getElementById('ca_pass').value='';
+  document.getElementById('ca_err').style.display='none';
+  document.getElementById('ca_err').textContent='';
+  setTimeout(function(){document.getElementById('ca_user').focus();},150);
+}
+function closeClearAllModal(){
+  document.getElementById('clearAllModal').style.display='none';
+}
+function confirmClearAll(){
+  var u=(document.getElementById('ca_user').value||'').trim().toLowerCase();
+  var p=(document.getElementById('ca_pass').value||'').trim();
+  var err=document.getElementById('ca_err');
+  if(!u||!p){err.textContent='Please enter your username and password.';err.style.display='block';return;}
+  var match=USERS.find(function(x){return x.u===u&&x.p===p;});
+  if(!match){
+    err.textContent='Incorrect credentials. Only authorised admin can clear all data.';
+    err.style.display='block';
+    ['ca_user','ca_pass'].forEach(function(id){
+      var el=document.getElementById(id);
+      el.style.borderColor='var(--red)';
+      setTimeout(function(){el.style.borderColor='';},700);
+    });
+    return;
+  }
+  closeClearAllModal();
   var jobs=loadJobs();
   if(window._fb) jobs.forEach(function(j){window._fb.deleteJob(j.jobId);});
   localStorage.removeItem(STORE);
-  refreshAll();renderSettings();toast('All data cleared',true);
+  refreshAll();renderSettings();
+  toast('All data cleared by '+match.u,true);
 }
 
 /* ── DRAWER ── */
@@ -2183,6 +2211,27 @@ function closeDr(){document.getElementById('drawer').classList.remove('open');do
 /* ── CLOCK & TOAST ── */
 function startClock(){(function tick(){var n=new Date(),h=n.getHours(),m=n.getMinutes(),s=n.getSeconds();document.getElementById('sbClk').textContent=(h<10?'0':'')+h+':'+(m<10?'0':'')+m+':'+(s<10?'0':'')+s;setTimeout(tick,1000);})();}
 function toast(msg,isErr){var t=document.getElementById('toast');t.textContent=msg;t.className=isErr?'err':'';t.classList.add('show');setTimeout(function(){t.classList.remove('show');},3000);}
-</script>
+</script><!-- PROTECTED CLEAR ALL MODAL -->
+<div id="clearAllModal" style="display:none;position:fixed;inset:0;z-index:600;background:rgba(0,0,0,0.6);align-items:center;justify-content:center;padding:20px;" onclick="if(event.target===this)closeClearAllModal()">
+  <div style="background:#FFFFFF;border:1.5px solid rgba(231,76,60,0.35);border-radius:16px;padding:30px 28px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,0.15);">
+    <div style="font-size:36px;text-align:center;margin-bottom:10px;">🗑️</div>
+    <div style="font-family:'Playfair Display',serif;font-size:17px;font-weight:700;color:var(--red);text-align:center;margin-bottom:4px;">Clear All Data</div>
+    <div style="font-size:12px;color:#666;text-align:center;margin-bottom:18px;line-height:1.5;">This will permanently delete <strong>all job records</strong>.<br>This action <strong>cannot be undone</strong>.</div>
+    <div style="background:rgba(231,76,60,0.06);border:1px solid rgba(231,76,60,0.2);border-radius:8px;padding:9px 12px;font-size:11px;color:var(--red);text-align:center;margin-bottom:16px;font-weight:600;">⚠️ Enter your credentials to authorise this action</div>
+    <label class="lb-label">Username</label>
+    <input class="lb-input" type="text" id="ca_user" placeholder="Enter your username" onkeydown="if(event.key==='Enter')document.getElementById('ca_pass').focus()" style="margin-bottom:10px;">
+    <label class="lb-label">Password</label>
+    <div style="position:relative;margin-bottom:6px;">
+      <input class="lb-input" type="password" id="ca_pass" placeholder="Enter your password" style="margin-bottom:0;padding-right:36px;" onkeydown="if(event.key==='Enter')confirmClearAll()">
+      <button onclick="var i=document.getElementById('ca_pass');i.type=i.type==='password'?'text':'password';" type="button" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:14px;color:#888;">👁</button>
+    </div>
+    <div id="ca_err" style="font-size:11px;color:var(--red);margin-bottom:10px;display:none;"></div>
+    <div style="display:flex;gap:10px;margin-top:6px;">
+      <button class="btn btn-outline" style="flex:1;" onclick="closeClearAllModal()">Cancel</button>
+      <button class="btn btn-red" style="flex:1;" onclick="confirmClearAll()">🗑️ Delete All</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
